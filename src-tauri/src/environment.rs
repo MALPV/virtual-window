@@ -101,6 +101,13 @@ struct FetchedWeather {
     fetched_at: u64,
 }
 
+fn publish<R: Runtime>(app: &AppHandle<R>, snapshot: EnvironmentSnapshot) {
+    app.state::<EnvironmentService>().store(snapshot.clone());
+    if let Err(error) = app.emit(ENVIRONMENT_EVENT, snapshot) {
+        eprintln!("failed to emit environment update: {error}");
+    }
+}
+
 // Se usa el reloj de pared (no Instant) para que la programacion sobreviva a la suspension del equipo.
 async fn run<R: Runtime>(app: AppHandle<R>, utc_offset_minutes: i32) {
     let client = build_client()
@@ -112,6 +119,18 @@ async fn run<R: Runtime>(app: AppHandle<R>, utc_offset_minutes: i32) {
         .ok()
         .map(|dir| dir.join(location::CACHE_FILE_NAME));
     let fallback = fallback_coordinates(utc_offset_minutes);
+
+    // Primer estado inmediato con la ubicacion en cache (aunque este caducada) para no esperar a la red.
+    let cached = cache_path.as_deref().and_then(location::cached_coordinates);
+    publish(
+        &app,
+        build_snapshot(
+            cached.unwrap_or(fallback),
+            cached.is_some(),
+            None,
+            unix_now() as f64,
+        ),
+    );
 
     let mut location: Option<ResolvedLocation> = None;
     let mut weather: Option<FetchedWeather> = None;
@@ -176,10 +195,7 @@ async fn run<R: Runtime>(app: AppHandle<R>, utc_offset_minutes: i32) {
             weather.as_ref().map(|fetched| fetched.weather),
             now as f64,
         );
-        app.state::<EnvironmentService>().store(snapshot.clone());
-        if let Err(error) = app.emit(ENVIRONMENT_EVENT, snapshot) {
-            eprintln!("failed to emit environment update: {error}");
-        }
+        publish(&app, snapshot);
 
         tokio::time::sleep(TICK).await;
     }

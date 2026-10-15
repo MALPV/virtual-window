@@ -62,6 +62,11 @@ fn read_cache(path: &Path) -> Option<CachedLocation> {
     cached.coordinates().is_some().then_some(cached)
 }
 
+/// Cached coordinates regardless of age, for an immediate first render before any network call.
+pub fn cached_coordinates(path: &Path) -> Option<Coordinates> {
+    read_cache(path).and_then(|cached| cached.coordinates())
+}
+
 fn write_cache(path: &Path, coordinates: Coordinates, now: u64) -> io::Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
