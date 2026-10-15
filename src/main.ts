@@ -158,6 +158,22 @@ async function main(): Promise<void> {
   }
 
   if (import.meta.env.DEV) {
+    // Acceso para el script de capturas (scripts/capture.mjs); solo existe en desarrollo.
+    Object.assign(window, {
+      __windowDev: {
+        scenes: sceneRegistry.scenes.map(({ manifest }) => manifest.id),
+        activeScene: () => manager.activeId,
+        selectScene: (id: string) => applySettings({ ...settings, scene: id }),
+        previewSettings: (patch: Partial<Settings>) => applySettings({ ...settings, ...patch }),
+        simulate: (snapshot: unknown) => {
+          if (!isEnvironmentSnapshot(snapshot)) throw new Error("Invalid snapshot");
+          store.setSimulated(snapshot);
+        },
+        ready: true,
+      },
+    });
+    if (new URLSearchParams(window.location.search).has("capture")) return;
+
     const { mountSimulator } = await import("./devtools/simulator");
     mountSimulator({
       store,
