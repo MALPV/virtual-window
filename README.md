@@ -1,68 +1,78 @@
 # Window
 
-Widget de escritorio flotante con forma de ventana arquitectónica: marco con profundidad (bisel interior, parteluces y reflejo en el cristal) y un paisaje detrás que responde con parallax a la posición del cursor. Hecho con Tauri v2, para macOS, Windows y Linux.
+A small floating window for your desktop that opens onto a living landscape. The sky follows the real sun where you are, the weather outside is your weather, and the view shifts with parallax as you move the cursor, as if you were looking through real glass.
 
-## Requisitos
+No text, no buttons, no setup. It works anywhere in the world, on macOS, Windows and Linux.
 
-- Node.js 20 o superior
-- Rust estable
-- Dependencias de sistema de Tauri: https://tauri.app/start/prerequisites/
+## Features
 
-## Desarrollo
+- **Real sky.** The sun's position is computed astronomically for your location every minute: dawn, golden hour, twilight and starry nights, in both hemispheres, the tropics and polar regions.
+- **Real weather.** Clouds, overcast skies, fog, rain, snow, thunderstorms, raindrops on the glass and frost on the panes below 1 °C. Rain, clouds and trees follow the wind.
+- **Alive.** Drifting clouds, swaying trees, birds by day, fireflies on warm nights, chimney smoke, city lights at dusk.
+- **Depth.** An architectural frame with an inner bevel, mullions and a reflective pane. The cursor stands in for your head: far things shift more than near ones.
+- **Scenes.** Pick a view from the right-click menu: Alpine lake, Rooftops (stylized) and Open sea (WebGL). Anyone can add a new one.
+- **Light.** Built with Tauri: a native window, a few MB, animations on the GPU, paused when hidden.
+
+## Download
+
+Get the installer for your system from the [Releases](../../releases) page.
+
+The builds are not code-signed yet:
+
+- **macOS:** right-click the app and choose **Open** the first time.
+- **Windows:** if SmartScreen appears, click **More info**, then **Run anyway**.
+- **Linux:** use the `.AppImage` or `.deb`. On Wayland, parallax only reacts while the cursor is over the window, and "always on top" depends on your compositor.
+
+## Usage
+
+- Drag anywhere to move the window. Resize from its edges.
+- Right-click for the menu: scene, always on top, and close.
+
+## Build from source
+
+Requirements: Node.js 20+, Rust stable, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your system.
 
 ```bash
 npm install
-npm run tauri dev
+npm run tauri dev     # desktop app with hot reload
+npm run tauri build   # installers in src-tauri/target/release/bundle/
 ```
 
-## Build de distribución
+To design scenes you don't need Rust at all: `npm run dev` and open http://localhost:1420 in a browser.
 
-```bash
-npm run tauri build
+## Create a scene
+
+A scene is a folder in `src/scenes/` with a manifest and some HTML/CSS, or a `mount` function for Canvas and WebGL. The engine gives it the world as CSS variables (`--sun-altitude`, `--daylight`, `--rain-intensity`, `--wind-drift`...) and a dev simulator lets you preview any hour and weather.
+
+Start with [docs/scene-api.md](docs/scene-api.md) and the template in `src/scenes/_template`.
+
+## How it works
+
+```
+Rust backend (src-tauri)                 Web frontend (src)
+-------------------------                ---------------------------------
+location.rs  IP -> coordinates  --+
+weather.rs   Open-Meteo          +-->  engine/world.ts     WorldState + default palette
+solar.rs     sun position       --+     engine/css-bridge   CSS variables + data attributes
+cursor.rs    global cursor  ---------> engine/parallax     smoothed viewer position
+menu.rs      native menu   <--------> scenes/registry     auto-discovered scenes
+                                        frame/             frame, glass, rain on the pane
 ```
 
-Los instaladores quedan en `src-tauri/target/release/bundle/`. Cada sistema operativo se compila en su propia plataforma (o en CI con una matriz de runners).
+All network access happens in Rust over HTTPS. The web view has no network access and runs under a strict Content Security Policy. Scenes are bundled at build time, never downloaded.
 
-## Interacción
+## Privacy
 
-- Arrastrar con el botón izquierdo en cualquier punto: mueve la ventana.
-- Clic derecho: menú nativo con "Siempre encima", la atribución de los datos del clima y "Cerrar". El menú sale en español si el sistema está en español y en inglés en cualquier otro caso.
-- Los bordes permiten redimensionar (tamaño mínimo 180x220).
+To show your sky and weather, the app looks up your approximate location from your IP address (ipapi.co, with ipwho.is as a fallback) and requests the weather for it from Open-Meteo. Coordinates are rounded to about 1 km and cached locally for 12 hours. There are no accounts, no analytics and no telemetry. Details in [PRIVACY.md](PRIVACY.md).
 
-## Cómo funciona el parallax
+## Contributing
 
-El backend (`src-tauri/src/cursor.rs`) consulta la posición global del cursor a unos 30 Hz y emite el evento `cursor-offset`, con el desplazamiento respecto al centro de la ventana normalizado a [-1, 1]. Solo lo emite cuando el valor cambia. El frontend lo suaviza con `requestAnimationFrame` y escribe `--px` / `--py`, y el CSS desplaza cada plano según su profundidad:
+Contributions are welcome, especially new scenes. Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Security issues: see [SECURITY.md](SECURITY.md).
 
-| Plano              | Profundidad |
-|--------------------|-------------|
-| Cielo              | 1.0         |
-| Montañas lejanas   | 0.8         |
-| Colinas y lago     | 0.55        |
-| Pinos cercanos     | 0.3         |
-| Derrame y hoja     | 6px fijos   |
-| Reflejo del cristal| -0.4        |
+## License
 
-## Hora, ubicación y clima
+Licensed under either of [Apache License 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT), at your option.
 
-La escena refleja el momento y el lugar reales, sin texto:
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this project by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
-- **Ubicación:** se obtiene por IP al arrancar (ipapi.co, con ipwho.is como respaldo). Se guarda en caché 12 horas en el directorio de caché de la app, solo latitud y longitud redondeadas a unos 1 km.
-- **Sol:** su altura y posición se calculan astronómicamente (`src-tauri/src/solar.rs`) cada minuto. La ventana se asume orientada hacia el ecuador: al sur en el hemisferio norte y al norte en el sur. El trópico y las regiones polares están contemplados.
-- **Clima:** se consulta en Open-Meteo cada 15 minutos. Si falla, se reintenta con espera creciente y el último dato se mantiene hasta 3 horas.
-- **Representación:** color del cielo según la altura del sol, estrellas de noche, nubes según la nubosidad, niebla, lluvia, nieve, relámpagos, gotas en el cristal y escarcha bajo 1 °C. La lluvia y la nieve se inclinan según el viento.
-- **Sin red:** si no hay ubicación, el ciclo día/noche se aproxima con la zona horaria del sistema.
-
-Toda la red pasa por el backend en Rust. El frontend no tiene acceso a internet y la CSP no lo permite.
-
-## Distribución pública
-
-- **Privacidad:** la IP del usuario se envía a ipapi.co o ipwho.is para geolocalizar, y las coordenadas aproximadas a Open-Meteo. Si se distribuye públicamente, hay que declararlo en una política de privacidad.
-- **Licencias de datos:** Open-Meteo es gratuito para uso no comercial y sus datos son CC BY 4.0. La atribución está en el menú contextual. Para uso comercial hacen falta los planes de pago de Open-Meteo y del proveedor de geolocalización.
-- **Firma de código:** para que los usuarios puedan instalarlo sin avisos de seguridad hace falta notarizar en macOS (Apple Developer ID) y firmar en Windows.
-
-## Limitaciones conocidas
-
-- Con VPN, la ubicación será la del servidor de la VPN.
-- La luna no se representa todavía.
-- Linux con Wayland no expone la posición global del cursor, así que el parallax solo reacciona con el cursor dentro de la ventana. Wayland tampoco garantiza "siempre encima". En X11 funciona completo.
-- Si el sistema tiene activado "reducir movimiento", el parallax se desactiva y la lluvia y la nieve quedan estáticas.
+Weather data by [Open-Meteo.com](https://open-meteo.com/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Open-Meteo's free API is for non-commercial use; commercial redistributions need their own plan.
