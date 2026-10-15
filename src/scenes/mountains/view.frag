@@ -65,7 +65,7 @@ void main() {
     // Bruma que se mueve despacio en el fondo del valle.
     vec2 mist_flow = vec2(u_time * (0.8 + 3.0 * u_wind_strength), u_time * 0.3);
     float mist = fbm((p.xz + mist_flow) * 0.02, 4);
-    float low = 1.0 - smoothstep(-70.0, -20.0, p.y);
+    float low = 1.0 - smoothstep(-380.0, -250.0, p.y);
     float amount = low * smoothstep(0.35, 0.75, mist) * (0.18 + 0.6 * u_fog);
     color = mix(color, to_linear(u_fog_color) * (0.4 + 0.6 * u_daylight), amount);
   }

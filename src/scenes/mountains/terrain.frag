@@ -99,14 +99,50 @@ float eroded_mountains(vec2 p, int octaves) {
   return value;
 }
 
-// Composicion: prado elevado junto a la ventana, un valle profundo y la cordillera al fondo.
-float terrain(vec2 p, int octaves) {
-  float near = length(vec2(p.x * 0.7, p.y));
-  float drop = -75.0 * smoothstep(9.0, 70.0, near);
-  float range = eroded_mountains(p * 0.0021 + vec2(3.1, 1.7), octaves) * 560.0 * smoothstep(140.0, 900.0, p.y);
-  float valley = (fbm(p * 0.012, 5) - 0.5) * 18.0 * smoothstep(12.0, 70.0, near);
-  float meadow = (fbm(p * 0.35, 4) - 0.5) * 0.7 * (1.0 - smoothstep(8.0, 30.0, near));
+// Composicion "a traves del valle": la casa esta en lo alto de una ladera, el fondo del valle queda
+// 400 m mas abajo y la ladera de enfrente llena la ventana hasta sus cumbres.
+float ground_height(vec2 p, int octaves) {
+  float near = length(vec2(p.x * 0.6, p.y));
+  // Ladera suave (unos 8,5 grados) durante 300 m y despues caida al valle: la parte baja de la ventana
+  // mira justo sobre las copas de la pendiente, el tercio superior sobre la ladera de enfrente.
+  float drop = -0.15 * min(near, 900.0) - 265.0 * smoothstep(250.0, 900.0, near);
+  float rise = smoothstep(800.0, 1800.0, p.y);
+  float range = rise * (440.0 + eroded_mountains(p * 0.0013 + vec2(3.1, 1.7), octaves) * 480.0);
+  float valley = (fbm(p * 0.008, 5) - 0.5) * 40.0 * smoothstep(20.0, 200.0, near);
+  // Ondulaciones suaves del prado; el detalle fino a esta distancia solo produciria ruido.
+  float meadow = (fbm(p * 0.035, 4) - 0.5) * 6.0 * (1.0 - smoothstep(60.0, 300.0, near));
   return drop + range + valley + meadow;
+}
+
+const float TREE_CELL = 9.0;
+
+// Abetos sobre el terreno, uno por celda, en la ladera cercana y el fondo del valle (no en la
+// cordillera, donde a esa distancia solo serian ruido). Silueta irregular con pisos de ramas.
+float tree_height(vec2 p, float ground) {
+  float distance = length(p);
+  if (distance < 25.0 || distance > 450.0) return 0.0;
+  // Pasillo abierto frente a la ventana; los abetos cercanos de los lados enmarcan la vista.
+  if (distance < 160.0 && abs(p.x) < 8.0 + distance * 0.12) return 0.0;
+  vec2 cell = floor(p / TREE_CELL);
+  vec2 local = p - (cell + 0.5) * TREE_CELL;
+  vec2 jitter = (vec2(hash12(cell), hash12(cell + 17.0)) - 0.5) * TREE_CELL * 0.45;
+  float density = 0.35 + 0.35 * smoothstep(60.0, 250.0, distance);
+  if (hash12(cell + 5.3) > density) return 0.0;
+  float tall = 12.0 + 12.0 * hash12(cell + 9.1);
+  float radius = tall * 0.22;
+  vec2 offset = local - jitter;
+  float angle = atan(offset.y, offset.x);
+  float ragged = 1.0 + 0.45 * (noise(vec2(angle * 2.5 + hash12(cell) * 20.0, hash12(cell + 2.0) * 9.0)) - 0.5);
+  float h = tall * (1.0 - length(offset) * ragged / radius);
+  if (h <= 0.0) return 0.0;
+  // Pisos de ramas: cada piso se ensancha hacia abajo antes del siguiente. La base queda enterrada.
+  return h - 1.6 * fract(h * 0.28 + hash12(cell + 4.0)) * smoothstep(tall * 0.97, tall * 0.4, h) - 1.5;
+}
+
+float terrain(vec2 p, int octaves) {
+  float ground = ground_height(p, octaves);
+  if (length(p) > 450.0) return ground;
+  return ground + tree_height(p, ground);
 }
 
 int octaves_at(float distance) {
@@ -119,7 +155,8 @@ float march(vec3 origin, vec3 direction) {
     vec3 p = origin + direction * t;
     float h = p.y - terrain(p.xz, octaves_at(t));
     if (h < 0.002 * t) return t;
-    t += max(h * 0.45, 0.004 * t);
+    // Pasos cortos cerca: los conos de los pinos son mas empinados que el relieve.
+    t += max(h * (t < 400.0 ? 0.22 : 0.45), 0.004 * t);
     if (t > MAX_DISTANCE) break;
   }
   return -1.0;
@@ -147,15 +184,26 @@ float soft_shadow(vec3 origin, vec3 sun) {
 }
 
 vec3 material(vec3 p, vec3 normal, float t) {
+  float ground = ground_height(p.xz, 6);
+  float above_ground = p.y - ground;
+  if (above_ground > 0.2 && length(p.xz) < 450.0) {
+    // Copas de abeto: verde oscuro, mas claro en las puntas y con ramas sueltas mas claras.
+    float tip = clamp(above_ground / 22.0, 0.0, 1.0);
+    float needles = noise(p.xz * 3.0 + p.y * 2.0);
+    vec3 base = mix(vec3(0.02, 0.045, 0.03), vec3(0.06, 0.1, 0.05), tip);
+    return base * (0.75 + 0.5 * hash12(floor(p.xz / TREE_CELL))) * (0.8 + 0.4 * needles);
+  }
   float steep = 1.0 - normal.y;
-  float variation = fbm(p.xz * 0.05, 4);
-  vec3 grass = mix(vec3(0.16, 0.22, 0.08), vec3(0.24, 0.27, 0.11), variation);
+  // El detalle se suaviza con la distancia para no convertirse en ruido de pixeles.
+  float lod = 1.0 + t * 0.003;
+  float variation = fbm(p.xz * 0.05 / lod, 4);
+  vec3 grass = mix(vec3(0.09, 0.11, 0.05), vec3(0.15, 0.15, 0.07), variation);
   vec3 forest = mix(vec3(0.05, 0.09, 0.04), vec3(0.08, 0.12, 0.05), variation);
-  vec3 rock = mix(vec3(0.24, 0.22, 0.2), vec3(0.36, 0.33, 0.3), fbm(p.xz * 0.2, 3));
+  vec3 rock = mix(vec3(0.24, 0.22, 0.2), vec3(0.36, 0.33, 0.3), fbm(p.xz * 0.2 / lod, 3));
 
-  // Bosque en las laderas bajas del valle, prado alpino arriba, roca en las pendientes fuertes.
-  vec3 albedo = mix(forest, grass, smoothstep(-40.0, 60.0, p.y));
-  albedo = mix(albedo, rock, smoothstep(0.28, 0.5, steep + (variation - 0.5) * 0.2));
+  // Bosque en las laderas bajas del valle, prado alpino arriba, roca solo en las pendientes fuertes.
+  vec3 albedo = mix(forest, grass, smoothstep(-150.0, 220.0, p.y + (variation - 0.5) * 60.0));
+  albedo = mix(albedo, rock, smoothstep(0.4, 0.62, steep + (variation - 0.5) * 0.1));
 
   // La cota de nieve baja con el frio y cuando nieva.
   float cold = clamp((10.0 - u_temperature) / 20.0, 0.0, 1.0);
@@ -178,7 +226,7 @@ void main() {
 
   vec3 sky = atmosphere(direction, sun);
   float night = 1.0 - smoothstep(-8.0, 2.0, u_sun_altitude);
-  vec3 night_sky = to_linear(mix(u_sky_horizon, u_sky_top, clamp(direction.y * 2.0, 0.0, 1.0))) * 0.6;
+  vec3 night_sky = to_linear(mix(u_sky_horizon, u_sky_top, clamp(direction.y * 2.0, 0.0, 1.0))) * 1.1;
   sky += night_sky * night;
 
   float t = march(origin, direction);
@@ -192,7 +240,7 @@ void main() {
     vec3 normal = terrain_normal(p, t);
     float above = smoothstep(-2.0, 5.0, u_sun_altitude);
     vec3 sun_light = to_linear(u_sun_color) * 3.2 * above * mix(1.0, 0.3, u_cloud_deck);
-    vec3 sky_light = to_linear(mix(u_sky_horizon, u_sky_top, 0.6)) * (0.25 + 0.55 * u_daylight) + vec3(0.002, 0.003, 0.006);
+    vec3 sky_light = to_linear(mix(u_sky_horizon, u_sky_top, 0.6)) * (0.3 + 0.5 * u_daylight) + vec3(0.012, 0.016, 0.03);
     float diffuse = max(dot(normal, sun), 0.0) * soft_shadow(p + normal * 0.05, sun);
     float hemisphere = 0.5 + 0.5 * normal.y;
     float bounce = max(dot(normal, normalize(vec3(-sun.x, 0.0, -sun.z))), 0.0) * 0.15;
@@ -200,10 +248,13 @@ void main() {
     color = albedo * (sun_light * diffuse + sky_light * hemisphere + sun_light * bounce * 0.3);
 
     // Perspectiva aerea: la distancia funde el terreno con el color del cielo en esa direccion.
-    float density = 0.00028 + u_fog * 0.0025 + u_rain * 0.0006;
-    float valley_haze = exp(-max(p.y + 60.0, 0.0) * 0.03) * (0.004 + u_fog * 0.01);
+    float density = 0.00011 + u_fog * 0.0022 + u_rain * 0.0005;
+    float valley_haze = exp(-max(p.y + 380.0, 0.0) * 0.02) * (0.002 + u_fog * 0.01);
     float extinction = exp(-t * (density + valley_haze));
-    color = color * extinction + sky * 0.9 * (1.0 - extinction);
+    // La bruma toma el color del cielo real: despejado, cubierto o con niebla.
+    vec3 haze = mix(sky * 0.9, to_linear(u_deck_color) * (0.3 + 0.7 * u_daylight), u_cloud_deck * 0.85);
+    haze = mix(haze, to_linear(u_fog_color) * (0.4 + 0.6 * u_daylight), u_fog * 0.8);
+    color = color * extinction + haze * (1.0 - extinction);
     depth = max(1.0 - exp(-t / DEPTH_SCALE), 1.0 / 255.0);
   }
 

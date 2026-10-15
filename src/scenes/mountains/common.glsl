@@ -28,8 +28,9 @@ const float PI = 3.14159265;
 // el cursor. Lo lejano acompana al observador y lo cercano no, como al mirar por un cristal real.
 const float WINDOW_DISTANCE = 1.0;
 const float TAN_HALF_FOV = 0.42;
-const float LOOK_DOWN = 0.07;
-const float EYE_HEIGHT = 1.7;
+// Mirada ligeramente alzada desde un primer piso: el horizonte queda algo por debajo del centro.
+const float LOOK_DOWN = -0.02;
+const float EYE_HEIGHT = 8.0;
 const vec2 EYE_RANGE = vec2(0.09, 0.06);
 
 // Profundidad guardada en el alfa del pase en cache: 0 es cielo.
@@ -91,10 +92,11 @@ const float CLOUD_HEIGHT = 900.0;
 float cloud_density(vec2 position) {
   float wind_sign = abs(u_wind_drift) > 0.05 ? sign(u_wind_drift) : 1.0;
   vec2 drift = vec2(wind_sign * (6.0 + 30.0 * u_wind_strength), 3.0) * u_time;
-  vec2 p = (position - drift) * 0.0011;
+  vec2 p = (position - drift) * 0.0009;
+  // Distorsion de dominio: formas organicas que nacen y se deshacen lentamente.
+  vec2 warp = vec2(fbm(p + vec2(u_time * 0.003, 0.0), 5), fbm(p + vec2(5.2, 1.3) - u_time * 0.002, 5));
+  float n = fbm(p + warp * 1.4, 5);
   float coverage = clamp(max(u_cloud_cover, u_cloud_deck), 0.0, 1.0);
-  // La forma evoluciona lentamente ademas de desplazarse: las nubes nacen y se deshacen.
-  float n = fbm(p + vec2(u_time * 0.004, -u_time * 0.003), 6);
-  float low = 1.0 - coverage - 0.08;
-  return smoothstep(low, low + 0.35, n);
+  float low = 0.78 - coverage * 0.55;
+  return smoothstep(low, low + 0.22, n);
 }
