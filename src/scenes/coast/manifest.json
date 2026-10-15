@@ -1,0 +1,12 @@
+{
+  "id": "coast",
+  "name": {
+    "en": "Coast",
+    "es": "Costa"
+  },
+  "author": "Marcos Valenzuela",
+  "license": "MIT OR Apache-2.0",
+  "apiVersion": 1,
+  "renderer": "svg",
+  "weatherOverlay": true
+}

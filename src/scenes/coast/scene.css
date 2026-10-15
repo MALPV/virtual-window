@@ -1,0 +1,651 @@
+/*
+ * Ilustracion vectorial: cada color mezcla tres paletas (noche, hora dorada y dia) segun la luz real,
+ * y se agrisa con la capa de nubes. Todo lo animado son sprites HTML para que lo mueva la GPU.
+ */
+[data-scene="coast"] .coast {
+  --s: max(calc(100cqw / 400), calc(100cqh / 600));
+  --coast-day: calc(var(--daylight, 1) * 100%);
+  --coast-gold: calc(var(--golden-hour, 0) * 85%);
+  --coast-gray: calc(var(--cloud-deck-opacity, 0) * 45%);
+  --coast-overcast: var(--cloud-deck-color, #a9b0b8);
+  --coast-sky-top: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #2618b0, #4fb3ee var(--coast-day)), #19c4cf var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-sky-mid: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #3a2bd0, #9fd8f5 var(--coast-day)), #7fcfc0 var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-sky-horizon: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #4a3ee0, #e4f3fb var(--coast-day)), #f6a98c var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-glow: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #5a4cf0, #fff6e0 var(--coast-day)), #ffb38a var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-sea-far: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #2b20a0, #2f9fc4 var(--coast-day)), #3aa9b5 var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-sea-near: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #170f6a, #1b7d9e var(--coast-day)), #1f6f86 var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-sea-line: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #4c42d8, #bfe9f5 var(--coast-day)), #9fe0dc var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-foam: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #6d63f0, #ffffff var(--coast-day)), #e8f6ef var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-sand: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #3b2fc0, #ecdcc4 var(--coast-day)), #e3a98c var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-sand-wet: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #2c22a0, #cdbba2 var(--coast-day)), #b98a77 var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-rock-light: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #4033c4, #b58a6e var(--coast-day)), #d07a5c var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-rock-mid: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #2a1f96, #8a5e48 var(--coast-day)), #8b4637 var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-rock-dark: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #170f5e, #4d3427 var(--coast-day)), #4b2420 var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-veg-light: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #3426b0, #4e9a5a var(--coast-day)), #3e8a5c var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-veg-dark: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #160d55, #24502f var(--coast-day)), #173d2c var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-flower: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #4f46ff, #ff6b5a var(--coast-day)), #ff5a4a var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-island: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #31259e, #6a8aa0 var(--coast-day)), #6e5a6a var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-tree: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #120a4c, #1a3a26 var(--coast-day)), #10251c var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-cloud: color-mix(
+    in oklab,
+    color-mix(in oklab, color-mix(in oklab, #3d31c8, #ffffff var(--coast-day)), #ffd2bf var(--coast-gold)),
+    var(--coast-overcast) var(--coast-gray)
+  );
+  --coast-cloud-period: 380s;
+  position: absolute;
+  inset: 0;
+}
+
+/* Duraciones por nivel de viento discreto para que las animaciones en curso no salten. */
+[data-scene="coast"][data-wind-level="breeze"] .coast {
+  --coast-cloud-period: 260s;
+}
+
+[data-scene="coast"][data-wind-level="strong"] .coast {
+  --coast-cloud-period: 150s;
+}
+
+[data-scene="coast"] .depth-layer,
+[data-scene="coast"] .coast__sprites {
+  container-type: size;
+}
+
+[data-scene="coast"] .coast__sprites {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+[data-scene="coast"] .coast__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+[data-scene="coast"] .coast__sky {
+  --depth: 1;
+}
+
+[data-scene="coast"] .coast__sea {
+  --depth: 0.9;
+}
+
+[data-scene="coast"] .coast__far {
+  --depth: 0.7;
+}
+
+[data-scene="coast"] .coast__beach {
+  --depth: 0.45;
+}
+
+[data-scene="coast"] .coast__mid {
+  --depth: 0.4;
+}
+
+[data-scene="coast"] .coast__near {
+  --depth: 0.25;
+}
+
+[data-scene="coast"] .coast__front {
+  --depth: 0.12;
+}
+
+[data-scene="coast"] .coast__stop--sky-top {
+  stop-color: var(--coast-sky-top);
+}
+
+[data-scene="coast"] .coast__stop--sky-mid {
+  stop-color: var(--coast-sky-mid);
+}
+
+[data-scene="coast"] .coast__stop--sky-horizon {
+  stop-color: var(--coast-sky-horizon);
+}
+
+[data-scene="coast"] .coast__stop--glow {
+  stop-color: var(--coast-glow);
+}
+
+[data-scene="coast"] .coast__stop--sea-far {
+  stop-color: var(--coast-sea-far);
+}
+
+[data-scene="coast"] .coast__stop--sea-near {
+  stop-color: var(--coast-sea-near);
+}
+
+[data-scene="coast"] .coast__rock-light {
+  fill: var(--coast-rock-light);
+}
+
+[data-scene="coast"] .coast__rock-mid {
+  fill: var(--coast-rock-mid);
+}
+
+[data-scene="coast"] .coast__rock-dark {
+  fill: var(--coast-rock-dark);
+}
+
+[data-scene="coast"] .coast__veg-light {
+  fill: var(--coast-veg-light);
+}
+
+[data-scene="coast"] .coast__veg-dark {
+  fill: var(--coast-veg-dark);
+}
+
+[data-scene="coast"] .coast__sand {
+  fill: var(--coast-sand);
+}
+
+[data-scene="coast"] .coast__island-shape {
+  fill: var(--coast-island);
+}
+
+[data-scene="coast"] .coast__cloud {
+  fill: var(--coast-cloud);
+}
+
+[data-scene="coast"] .coast__canopy {
+  fill: var(--coast-tree);
+}
+
+[data-scene="coast"] .coast__trunk {
+  fill: var(--coast-rock-dark);
+}
+
+[data-scene="coast"] .coast__leaf {
+  fill: var(--coast-veg-dark);
+}
+
+[data-scene="coast"] .coast__blade {
+  fill: var(--coast-veg-light);
+}
+
+[data-scene="coast"] .coast__flower {
+  fill: var(--coast-flower);
+}
+
+[data-scene="coast"] .coast__flower-center {
+  fill: var(--coast-sand);
+}
+
+[data-scene="coast"] .coast__stem {
+  fill: none;
+  stroke: var(--coast-veg-dark);
+  stroke-width: 1.2;
+}
+
+[data-scene="coast"] .coast__wet {
+  fill: none;
+  stroke: var(--coast-sand-wet);
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+[data-scene="coast"] .coast__sea-line {
+  fill: none;
+  stroke: var(--coast-sea-line);
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+[data-scene="coast"] .coast__stars {
+  fill: #ffffff;
+  opacity: var(--stars-visibility, 0);
+  transition: opacity var(--environment-transition);
+}
+
+[data-scene="coast"] .coast__glow {
+  opacity: calc(var(--golden-hour, 0) * 0.8 * (1 - var(--cloud-deck-opacity, 0)));
+}
+
+/* En SVG, los px de una transformacion CSS equivalen a unidades del viewBox. */
+[data-scene="coast"] .coast__sun {
+  fill: var(--sun-color, #fff8ea);
+  opacity: var(--sun-visibility, 1);
+  transform: translate(
+    calc((40 + var(--sun-x, 0.72) * 320) * 1px),
+    calc((300 - min(var(--sun-altitude, 12), 60) / 60 * 240) * 1px)
+  );
+  transition:
+    transform var(--environment-transition),
+    opacity var(--environment-transition);
+}
+
+[data-scene="coast"] .coast__cloud,
+[data-scene="coast"] .coast__tree,
+[data-scene="coast"] .coast__foam,
+[data-scene="coast"] .coast__glint,
+[data-scene="coast"] .coast__plants {
+  position: absolute;
+  will-change: transform;
+}
+
+[data-scene="coast"] .coast__cloud {
+  left: 0;
+  opacity: calc(var(--base) * clamp(0, (var(--cloud-cover, 0.3) - var(--threshold)) * 5 + 0.5, 1));
+  transition: opacity var(--environment-transition);
+  animation: coast-drift calc(var(--coast-cloud-period) * var(--speed)) linear infinite;
+  animation-delay: calc(var(--coast-cloud-period) * var(--speed) * var(--phase) * -1);
+}
+
+[data-scene="coast"][data-wind="left"] .coast__cloud {
+  animation-direction: reverse;
+}
+
+[data-scene="coast"] .coast__cloud--1 {
+  top: calc(100% - (600 - 110) * var(--s));
+  width: calc(120 * var(--s));
+  --base: 0.8;
+  --threshold: 0.1;
+  --speed: 1;
+  --phase: 0.3;
+}
+
+[data-scene="coast"] .coast__cloud--2 {
+  top: calc(100% - (600 - 170) * var(--s));
+  width: calc(90 * var(--s));
+  --base: 0.7;
+  --threshold: 0.35;
+  --speed: 1.3;
+  --phase: 0.75;
+}
+
+[data-scene="coast"] .coast__cloud--3 {
+  top: calc(100% - (600 - 60) * var(--s));
+  width: calc(150 * var(--s));
+  --base: 0.75;
+  --threshold: 0.6;
+  --speed: 0.85;
+  --phase: 0.1;
+}
+
+@keyframes coast-drift {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100cqw);
+  }
+}
+
+[data-scene="coast"] .coast__gulls {
+  position: absolute;
+  top: 24%;
+  left: 0;
+  width: 24px;
+  height: 12px;
+  opacity: calc(clamp(0, (var(--daylight, 1) - 0.4) * 3, 1));
+  will-change: transform;
+  animation: coast-glide 90s linear infinite;
+  animation-delay: -30s;
+}
+
+[data-scene="coast"][data-precipitation="rain"] .coast__gulls,
+[data-scene="coast"][data-precipitation="snow"] .coast__gulls {
+  display: none;
+}
+
+@keyframes coast-glide {
+  0% {
+    transform: translate(calc(100cqw + 30px), 0);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-30px, 12cqh);
+    opacity: 1;
+  }
+  40.01%,
+  100% {
+    transform: translate(-30px, 12cqh);
+    opacity: 0;
+  }
+}
+
+[data-scene="coast"] .coast__gull {
+  position: absolute;
+  width: 9px;
+  height: 5px;
+  fill: none;
+  stroke: var(--coast-rock-dark);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  transform-origin: 50% 60%;
+  animation: coast-flap 0.9s ease-in-out infinite alternate;
+}
+
+[data-scene="coast"] .coast__gull--2 {
+  top: 6px;
+  left: 13px;
+  animation-delay: -0.4s;
+}
+
+@keyframes coast-flap {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(-0.3);
+  }
+}
+
+[data-scene="coast"] .coast__glint {
+  height: 2px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--coast-foam), transparent 70%);
+  opacity: 0;
+  animation: coast-twinkle var(--period) ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+[data-scene="coast"] .coast__sea .coast__sprites {
+  opacity: calc(max(var(--sun-visibility, 1), var(--golden-hour, 0)) * (1 - var(--cloud-deck-opacity, 0)));
+}
+
+[data-scene="coast"] .coast__glint--1 {
+  top: calc(100% - (600 - 312) * var(--s));
+  left: calc(50% + (60 - 200) * var(--s));
+  width: calc(18 * var(--s));
+  --period: 3.1s;
+  --delay: -0.4s;
+}
+
+[data-scene="coast"] .coast__glint--2 {
+  top: calc(100% - (600 - 326) * var(--s));
+  left: calc(50% + (110 - 200) * var(--s));
+  width: calc(24 * var(--s));
+  --period: 2.7s;
+  --delay: -1.6s;
+}
+
+[data-scene="coast"] .coast__glint--3 {
+  top: calc(100% - (600 - 340) * var(--s));
+  left: calc(50% + (150 - 200) * var(--s));
+  width: calc(30 * var(--s));
+  --period: 3.6s;
+  --delay: -2.3s;
+}
+
+[data-scene="coast"] .coast__glint--4 {
+  top: calc(100% - (600 - 352) * var(--s));
+  left: calc(50% + (90 - 200) * var(--s));
+  width: calc(20 * var(--s));
+  --period: 2.9s;
+  --delay: -0.9s;
+}
+
+[data-scene="coast"] .coast__glint--5 {
+  top: calc(100% - (600 - 334) * var(--s));
+  left: calc(50% + (40 - 200) * var(--s));
+  width: calc(16 * var(--s));
+  --period: 3.4s;
+  --delay: -2.8s;
+}
+
+@keyframes coast-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+[data-scene="coast"] .coast__tree {
+  overflow: visible;
+  transform-origin: 50% 100%;
+  animation: coast-sway-calm var(--period) ease-in-out infinite alternate;
+  animation-delay: var(--delay);
+}
+
+[data-scene="coast"] .coast__tree--1 {
+  top: calc(100% - (600 - 236) * var(--s));
+  left: calc(50% + (282 - 200) * var(--s));
+  width: calc(34 * var(--s));
+  height: calc(23 * var(--s));
+  --period: 4.2s;
+  --delay: -1.1s;
+}
+
+[data-scene="coast"] .coast__tree--2 {
+  top: calc(100% - (600 - 208) * var(--s));
+  left: calc(50% + (322 - 200) * var(--s));
+  width: calc(42 * var(--s));
+  height: calc(28 * var(--s));
+  --period: 5.1s;
+  --delay: -2.7s;
+}
+
+[data-scene="coast"] .coast__tree--3 {
+  top: calc(100% - (600 - 150) * var(--s));
+  left: calc(50% + (352 - 200) * var(--s));
+  width: calc(64 * var(--s));
+  height: calc(43 * var(--s));
+  --period: 6s;
+  --delay: -0.6s;
+}
+
+[data-scene="coast"] .coast__plants {
+  overflow: visible;
+  transform-origin: 50% 100%;
+  animation: coast-sway-calm var(--period) ease-in-out infinite alternate;
+}
+
+[data-scene="coast"] .coast__plants--left {
+  top: calc(100% - (600 - 470) * var(--s));
+  left: calc(50% + (-10 - 200) * var(--s));
+  width: calc(190 * var(--s));
+  height: calc(140 * var(--s));
+  --period: 3.6s;
+}
+
+[data-scene="coast"] .coast__plants--right {
+  top: calc(100% - (600 - 494) * var(--s));
+  left: calc(50% + (296 - 200) * var(--s));
+  width: calc(120 * var(--s));
+  height: calc(110 * var(--s));
+  --period: 3.1s;
+  animation-delay: -1.3s;
+}
+
+[data-scene="coast"][data-wind-level="breeze"] .coast__tree,
+[data-scene="coast"][data-wind-level="breeze"] .coast__plants {
+  animation-name: coast-sway-breeze;
+}
+
+[data-scene="coast"][data-wind-level="strong"] .coast__tree,
+[data-scene="coast"][data-wind-level="strong"] .coast__plants {
+  animation-name: coast-sway-strong;
+  animation-duration: calc(var(--period) * 0.5);
+}
+
+@keyframes coast-sway-calm {
+  from {
+    transform: skewX(-0.8deg);
+  }
+  to {
+    transform: skewX(0.8deg);
+  }
+}
+
+@keyframes coast-sway-breeze {
+  from {
+    transform: skewX(-2.2deg);
+  }
+  to {
+    transform: skewX(2.2deg);
+  }
+}
+
+@keyframes coast-sway-strong {
+  from {
+    transform: skewX(-4.5deg);
+  }
+  to {
+    transform: skewX(4.5deg);
+  }
+}
+
+/* La espuma sube por la arena y se retira, cada ola a su ritmo. */
+[data-scene="coast"] .coast__foam {
+  fill: none;
+  stroke: var(--coast-foam);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: coast-wash var(--period) ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+[data-scene="coast"][data-wind-level="strong"] .coast__foam {
+  animation-duration: calc(var(--period) * 0.6);
+}
+
+[data-scene="coast"] .coast__foam--1 {
+  top: calc(100% - (600 - 312) * var(--s));
+  left: calc(50% + (200 - 200) * var(--s));
+  width: calc(40 * var(--s));
+  height: calc(8 * var(--s));
+  --period: 7s;
+  --delay: -1s;
+}
+
+[data-scene="coast"] .coast__foam--2 {
+  top: calc(100% - (600 - 346) * var(--s));
+  left: calc(50% + (206 - 200) * var(--s));
+  width: calc(46 * var(--s));
+  height: calc(9 * var(--s));
+  --period: 8.5s;
+  --delay: -4.2s;
+}
+
+[data-scene="coast"] .coast__foam--3 {
+  top: calc(100% - (600 - 380) * var(--s));
+  left: calc(50% + (243 - 200) * var(--s));
+  width: calc(54 * var(--s));
+  height: calc(10 * var(--s));
+  --period: 7.8s;
+  --delay: -2.6s;
+}
+
+[data-scene="coast"] .coast__foam--4 {
+  top: calc(100% - (600 - 445) * var(--s));
+  left: calc(50% + (196 - 200) * var(--s));
+  width: calc(60 * var(--s));
+  height: calc(11 * var(--s));
+  --period: 9.2s;
+  --delay: -6.1s;
+}
+
+[data-scene="coast"] .coast__foam--5 {
+  top: calc(100% - (600 - 526) * var(--s));
+  left: calc(50% + (147 - 200) * var(--s));
+  width: calc(70 * var(--s));
+  height: calc(12 * var(--s));
+  --period: 8.1s;
+  --delay: -3.3s;
+}
+
+@keyframes coast-wash {
+  0% {
+    transform: translate(-8px, 3px) scaleX(0.7);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  60% {
+    transform: translate(5px, -2px) scaleX(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(7px, -3px) scaleX(1.05);
+    opacity: 0;
+  }
+}
+
+[data-scene="coast"] .coast__fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--fog-color, #dfe3e8);
+  opacity: var(--fog-density, 0);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 35%, #000 52%, rgba(0, 0, 0, 0.5) 80%);
+  mask-image: linear-gradient(to bottom, transparent 35%, #000 52%, rgba(0, 0, 0, 0.5) 80%);
+  transition: opacity var(--environment-transition);
+}
