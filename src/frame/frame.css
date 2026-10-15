@@ -308,24 +308,43 @@ body {
   }
 }
 
-/* El reflejo es la imagen virtual de la habitacion: se mueve en sentido contrario. */
+/*
+ * El reflejo es la imagen virtual de la habitacion: se mueve en sentido contrario.
+ * De dia apenas se ve porque fuera hay mas luz que dentro; de noche aparece el interior:
+ * el resplandor calido de una lampara a un lado y la penumbra del cuarto.
+ */
 .reflection {
   --depth: -0.4;
   position: absolute;
   inset: -40px;
   pointer-events: none;
   background:
-    linear-gradient(
-      118deg,
-      transparent 0 22%,
-      rgba(255, 255, 255, 0.17) 30%,
-      rgba(255, 255, 255, 0.05) 37%,
-      transparent 41%,
-      transparent 55%,
-      rgba(255, 255, 255, 0.09) 60%,
-      transparent 66%
-    ),
-    linear-gradient(to bottom, rgba(220, 232, 245, 0.08), rgba(220, 232, 245, 0) 45%, rgba(30, 40, 50, 0.07));
+    radial-gradient(140% 90% at 85% 0%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(to bottom, rgba(220, 232, 245, 0.05), rgba(220, 232, 245, 0) 45%, rgba(30, 40, 50, 0.05));
+}
+
+.reflection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: calc((1 - var(--daylight, 1)) * 0.75);
+  background:
+    radial-gradient(circle at 22% 68%, rgba(255, 196, 128, 0.22), rgba(255, 170, 100, 0.08) 14%, transparent 34%),
+    radial-gradient(ellipse 30% 60% at 70% 80%, rgba(60, 50, 44, 0.35), transparent 70%),
+    linear-gradient(to bottom, rgba(70, 60, 54, 0.12), rgba(40, 34, 30, 0.22));
+  transition: opacity var(--environment-transition);
+}
+
+/* Huellas y polvo: solo se notan cuando el sol bajo da de frente en el cristal. */
+.reflection::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: calc(var(--golden-hour, 0) * var(--sun-visibility, 0) * 0.5);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.03' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.95 0 0 0 0 0.88 0 0 0 0.9 -0.42'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  mix-blend-mode: screen;
+  transition: opacity var(--environment-transition);
 }
 
 /* La hoja esta al fondo del derrame, asi que se desplaza lo mismo que su borde interior. */
