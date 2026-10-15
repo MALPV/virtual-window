@@ -1,0 +1,12 @@
+{
+  "id": "alpine-lake",
+  "name": {
+    "en": "Alpine lake",
+    "es": "Lago alpino"
+  },
+  "author": "Marcos Valenzuela",
+  "license": "MIT OR Apache-2.0",
+  "apiVersion": 1,
+  "renderer": "svg",
+  "weatherOverlay": true
+}
