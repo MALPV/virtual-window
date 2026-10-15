@@ -1,4 +1,6 @@
 mod cursor;
+#[cfg(debug_assertions)]
+mod devtools;
 mod environment;
 mod location;
 mod menu;
@@ -17,7 +19,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             cursor::start_cursor_tracking,
             environment::start_environment,
-            menu::show_context_menu
+            menu::show_context_menu,
+            #[cfg(debug_assertions)]
+            devtools::dev_set_window_size
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

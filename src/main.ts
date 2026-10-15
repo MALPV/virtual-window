@@ -125,6 +125,7 @@ async function main(): Promise<void> {
       activeSceneId: () => manager.activeId,
       selectScene: (id) => selectScene(manager, id),
       openByDefault: !inTauri,
+      inTauri,
     });
   }
 }

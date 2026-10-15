@@ -1,6 +1,7 @@
 import { CONDITIONS, type Condition, type EnvironmentSnapshot } from "../engine/world";
 import type { WorldStore } from "../engine/world-store";
 import type { SceneEntry } from "../scenes/registry";
+import { createWindowSizeController, type WindowSize, type WindowSizeController } from "./window-size";
 import "./simulator.css";
 
 /**
@@ -13,6 +14,7 @@ export interface SimulatorOptions {
   activeSceneId: () => string | null;
   selectScene: (id: string) => Promise<boolean>;
   openByDefault: boolean;
+  inTauri: boolean;
 }
 
 interface SimulatorValues {
@@ -38,6 +40,14 @@ const PRESETS: Record<string, Partial<SimulatorValues>> = {
 };
 
 const TOGGLE_HINT = "Ctrl/Cmd + Shift + D";
+
+const SIZE_PRESETS: Record<string, WindowSize> = {
+  "Compact 220x300": { width: 220, height: 300 },
+  "Default 300x400": { width: 300, height: 400 },
+  "Landscape 480x320": { width: 480, height: 320 },
+  "Large 600x800": { width: 600, height: 800 },
+  "Panoramic 900x420": { width: 900, height: 420 },
+};
 
 function toSnapshot(values: SimulatorValues): EnvironmentSnapshot {
   return {
@@ -203,6 +213,55 @@ export function mountSimulator(options: SimulatorOptions): void {
     }
   });
 
+  appendWindowSection(panel, createWindowSizeController(options.inTauri));
+
   document.body.append(panel);
   apply();
+}
+
+function appendWindowSection(panel: HTMLElement, controller: WindowSizeController): void {
+  panel.append(element("div", "simulator__section", "Window"));
+
+  const presetSelect = select(
+    [["", "Size preset..."], ...Object.keys(SIZE_PRESETS).map((name) => [name, name] as const)],
+    "",
+  );
+  panel.append(row("Size", presetSelect));
+
+  const createSizeSlider = (label: string, min: number) => {
+    const input = element("input", "simulator__control");
+    input.type = "range";
+    input.min = String(min);
+    input.step = "10";
+    const output = element("output", "simulator__value");
+    panel.append(row(label, input, output));
+    return { input, output };
+  };
+  const width = createSizeSlider("Width", controller.min.width);
+  const height = createSizeSlider("Height", controller.min.height);
+
+  // El maximo depende de la pantalla o del viewport, que pueden cambiar mientras el panel esta abierto.
+  const render = (size: WindowSize) => {
+    const max = controller.max();
+    width.input.max = String(max.width);
+    height.input.max = String(max.height);
+    width.input.value = String(size.width);
+    height.input.value = String(size.height);
+    width.output.value = String(Math.round(size.width));
+    height.output.value = String(Math.round(size.height));
+  };
+
+  const setFromSliders = () => {
+    controller.set({ width: Number(width.input.value), height: Number(height.input.value) });
+  };
+  width.input.addEventListener("input", setFromSliders);
+  height.input.addEventListener("input", setFromSliders);
+  presetSelect.addEventListener("change", () => {
+    const preset = SIZE_PRESETS[presetSelect.value];
+    if (preset !== undefined) controller.set(preset);
+    presetSelect.value = "";
+  });
+
+  controller.onChange(render);
+  render(controller.current());
 }
