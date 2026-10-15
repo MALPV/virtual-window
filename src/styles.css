@@ -1,0 +1,517 @@
+/*
+ * Modelo de profundidad: el cursor actua como la cabeza del observador.
+ * --px / --py (de -1 a 1) los escribe main.ts. Cada plano se desplaza
+ * --depth * --max-shift en la misma direccion que el observador: lo lejano
+ * se mueve mas respecto al marco, que es el plano fijo de referencia.
+ */
+:root {
+  --px: 0;
+  --py: 0;
+  --max-shift: 26px;
+
+  --casing: 16px;
+  --casing-bottom: 24px;
+  --reveal: 12px;
+  --reveal-shift: 6px;
+  --sash: 5px;
+  --mullion: 6px;
+  --mullion-face: 4px;
+
+  --paint: #ebe3d5;
+  --paint-light: #f7f2e9;
+  --paint-shade: #d2c7b4;
+  --paint-deep: #b7ab95;
+
+  /* Valores iniciales hasta recibir el primer snapshot de entorno (environment.ts). */
+  --sky-0: #5b8cc9;
+  --sky-1: #8fb5dd;
+  --sky-2: #d6dfe2;
+  --sky-3: #f2d3ae;
+  --sun-color: #fff8ea;
+  --sun-opacity: 1;
+  --stars: 0;
+  --deck-color: #a9b0b8;
+  --deck-opacity: 0;
+  --cloud-color: #ffffff;
+  --land-brightness: 1;
+  --land-saturation: 1;
+  --fog: 0;
+  --fog-color: #dfe3e8;
+  --precipitation: 0;
+  --glass-drops: 0;
+  --wind-drift: 0;
+  --frost: 0;
+  --environment-transition: 4s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--paint);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.window {
+  position: fixed;
+  inset: 0;
+}
+
+/* Bordes con tonos distintos por lado para que las esquinas formen ingletes. */
+.casing {
+  position: absolute;
+  inset: 0;
+  border-style: solid;
+  border-width: var(--casing) var(--casing) var(--casing-bottom);
+  border-color: #efe8db #e3dacb var(--paint) #e9e1d3;
+}
+
+.casing::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--casing)) calc(-1 * var(--casing)) calc(-1 * var(--casing-bottom));
+  border: 1px solid;
+  border-color: rgba(255, 255, 255, 0.7) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.14) rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+.casing::after {
+  content: "";
+  position: absolute;
+  inset: calc(5px - var(--casing)) calc(5px - var(--casing)) calc(5px - var(--casing-bottom));
+  border: 1px solid;
+  border-color: rgba(0, 0, 0, 0.12) rgba(255, 255, 255, 0.6) rgba(255, 255, 255, 0.6) rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.opening {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--sky-1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+}
+
+/* Sobredimensionada para que el desplazamiento nunca deje ver el borde de la capa. */
+.layer {
+  --overscan: calc(var(--max-shift) + 6px);
+  position: absolute;
+  top: calc(-1 * var(--overscan));
+  left: calc(-1 * var(--overscan));
+  width: calc(100% + 2 * var(--overscan));
+  height: calc(100% + 2 * var(--overscan));
+  will-change: transform;
+  transform: translate3d(
+    calc(var(--px) * var(--depth) * var(--max-shift)),
+    calc(var(--py) * var(--depth) * var(--max-shift)),
+    0
+  );
+}
+
+.layer--sky {
+  --depth: 1;
+}
+
+.layer--far {
+  --depth: 0.8;
+}
+
+.layer--mid {
+  --depth: 0.55;
+}
+
+.layer--near {
+  --depth: 0.3;
+}
+
+/* Cielo: los colores llegan como variables desde environment.ts. */
+.sky-stop {
+  transition: stop-color var(--environment-transition);
+}
+
+.sky-stop--0 {
+  stop-color: var(--sky-0);
+}
+
+.sky-stop--1 {
+  stop-color: var(--sky-1);
+}
+
+.sky-stop--2 {
+  stop-color: var(--sky-2);
+}
+
+.sky-stop--3 {
+  stop-color: var(--sky-3);
+}
+
+.sun {
+  opacity: var(--sun-opacity);
+  transition: opacity var(--environment-transition);
+}
+
+.sun-glow-stop {
+  stop-color: var(--sun-color);
+}
+
+.sun-disc {
+  fill: var(--sun-color);
+}
+
+.stars {
+  fill: #ffffff;
+  opacity: var(--stars);
+  transition: opacity var(--environment-transition);
+}
+
+.cloud-deck {
+  fill: var(--deck-color);
+  opacity: var(--deck-opacity);
+  transition: opacity var(--environment-transition);
+}
+
+.cloud {
+  fill: var(--cloud-color);
+  transition: opacity var(--environment-transition);
+}
+
+.layer--land {
+  filter: brightness(var(--land-brightness)) saturate(var(--land-saturation));
+  transition: filter var(--environment-transition);
+}
+
+/* Niebla entre las colinas y los pinos: lo cercano queda mas nitido que lo lejano. */
+.fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--fog-color);
+  opacity: var(--fog);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.7) 55%, #000 80%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.7) 55%, #000 80%);
+  transition: opacity var(--environment-transition);
+}
+
+.precipitation {
+  --depth: 0.12;
+  position: absolute;
+  inset: -60px;
+  display: none;
+  pointer-events: none;
+  opacity: var(--precipitation);
+  transform: translate3d(
+    calc(var(--px) * var(--depth) * var(--max-shift)),
+    calc(var(--py) * var(--depth) * var(--max-shift)),
+    0
+  );
+}
+
+:root[data-precipitation="rain"] .precipitation,
+:root[data-precipitation="snow"] .precipitation {
+  display: block;
+}
+
+.precipitation__wind {
+  position: absolute;
+  inset: -25%;
+  transform: rotate(calc(var(--wind-drift) * -22deg));
+}
+
+/* Cada lamina se desplaza exactamente un mosaico por ciclo para que el bucle no tenga saltos. */
+.precipitation__sheet {
+  position: absolute;
+  top: -240px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: none;
+  will-change: transform;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+:root[data-precipitation="rain"] .precipitation__sheet--rain-far,
+:root[data-precipitation="rain"] .precipitation__sheet--rain-near,
+:root[data-precipitation="snow"] .precipitation__sheet--snow-far,
+:root[data-precipitation="snow"] .precipitation__sheet--snow-near {
+  display: block;
+}
+
+.precipitation__sheet--rain-far {
+  opacity: 0.6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='160'%3E%3Cpath d='M10 8v22M34 66v26M58 18v20M70 106v24M22 122v22M46 40v18' stroke='white' stroke-opacity='0.55' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: 80px 160px;
+  animation-name: fall-160;
+  animation-duration: 0.5s;
+}
+
+.precipitation__sheet--rain-near {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='160'%3E%3Cpath d='M18 20v30M52 90v34M66 30v22M30 130v24' stroke='white' stroke-opacity='0.5' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: 120px 240px;
+  animation-name: fall-240;
+  animation-duration: 0.42s;
+}
+
+.precipitation__sheet--snow-far {
+  opacity: 0.7;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' fill='white'%3E%3Ccircle cx='12' cy='18' r='1.2'/%3E%3Ccircle cx='48' cy='64' r='1'/%3E%3Ccircle cx='86' cy='12' r='1.4'/%3E%3Ccircle cx='104' cy='88' r='1'/%3E%3Ccircle cx='30' cy='100' r='1.3'/%3E%3Ccircle cx='70' cy='44' r='0.9'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
+  animation-name: fall-120;
+  animation-duration: 7s;
+}
+
+.precipitation__sheet--snow-near {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' fill='white'%3E%3Ccircle cx='20' cy='30' r='2'/%3E%3Ccircle cx='76' cy='80' r='2.4'/%3E%3Ccircle cx='100' cy='20' r='1.8'/%3E%3Ccircle cx='44' cy='108' r='2.2'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  animation-name: fall-200;
+  animation-duration: 9s;
+}
+
+@keyframes fall-120 {
+  to {
+    transform: translate3d(0, 120px, 0);
+  }
+}
+
+@keyframes fall-160 {
+  to {
+    transform: translate3d(0, 160px, 0);
+  }
+}
+
+@keyframes fall-200 {
+  to {
+    transform: translate3d(0, 200px, 0);
+  }
+}
+
+@keyframes fall-240 {
+  to {
+    transform: translate3d(0, 240px, 0);
+  }
+}
+
+.lightning {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  background: rgb(235, 240, 255);
+  opacity: 0;
+}
+
+:root[data-storm="true"] .lightning {
+  display: block;
+  animation: lightning 9s infinite;
+}
+
+@keyframes lightning {
+  0%,
+  88% {
+    opacity: 0;
+  }
+  89% {
+    opacity: 0.55;
+  }
+  90% {
+    opacity: 0.05;
+  }
+  91% {
+    opacity: 0.4;
+  }
+  93%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .precipitation__sheet,
+  :root[data-storm="true"] .lightning {
+    animation: none;
+  }
+}
+
+/* El reflejo es la imagen virtual de la habitacion: se mueve en sentido contrario. */
+.reflection {
+  --depth: -0.4;
+  position: absolute;
+  inset: -40px;
+  pointer-events: none;
+  will-change: transform;
+  background:
+    linear-gradient(
+      118deg,
+      transparent 0 22%,
+      rgba(255, 255, 255, 0.17) 30%,
+      rgba(255, 255, 255, 0.05) 37%,
+      transparent 41%,
+      transparent 55%,
+      rgba(255, 255, 255, 0.09) 60%,
+      transparent 66%
+    ),
+    linear-gradient(to bottom, rgba(220, 232, 245, 0.08), rgba(220, 232, 245, 0) 45%, rgba(30, 40, 50, 0.07));
+  transform: translate3d(
+    calc(var(--px) * var(--depth) * var(--max-shift)),
+    calc(var(--py) * var(--depth) * var(--max-shift)),
+    0
+  );
+}
+
+/* La hoja esta al fondo del derrame, asi que se desplaza lo mismo que su borde interior. */
+.sash {
+  position: absolute;
+  inset: var(--reveal);
+  border: var(--sash) solid #e4dbca;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+    inset 0 1px 3px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.12);
+  transform: translate3d(calc(var(--px) * var(--reveal-shift)), calc(var(--py) * var(--reveal-shift)), 0);
+}
+
+.glass-drops,
+.frost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity var(--environment-transition);
+}
+
+.glass-drops {
+  opacity: var(--glass-drops);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' fill='white' fill-opacity='0.16' stroke='white' stroke-opacity='0.4' stroke-width='0.6'%3E%3Ccircle cx='14' cy='22' r='2.4'/%3E%3Ccircle cx='60' cy='12' r='1.4'/%3E%3Ccircle cx='98' cy='40' r='3'/%3E%3Ccircle cx='36' cy='70' r='1.8'/%3E%3Ccircle cx='120' cy='96' r='2'/%3E%3Ccircle cx='76' cy='104' r='2.8'/%3E%3Ccircle cx='20' cy='122' r='1.2'/%3E%3Cpath d='M98 46q-1 14 0 26' fill='none'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* La escarcha se forma desde los bordes de cada cristal y se acumula mas abajo. */
+.frost {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 42% 58%;
+  opacity: var(--frost);
+}
+
+.frost__pane {
+  box-shadow: inset 0 0 18px 4px rgba(236, 243, 250, 0.75);
+  background: linear-gradient(to top, rgba(236, 243, 250, 0.55), rgba(236, 243, 250, 0) 35%);
+}
+
+.mullion {
+  position: absolute;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.18);
+}
+
+.mullion--vertical {
+  top: calc(-1 * var(--sash));
+  bottom: calc(-1 * var(--sash));
+  left: calc(50% - var(--mullion) / 2);
+  width: var(--mullion);
+  background: linear-gradient(to right, #d6ccba, #f3ece1 35%, #e8dfcf 70%, #cfc3af);
+}
+
+.mullion--horizontal {
+  left: calc(-1 * var(--sash));
+  right: calc(-1 * var(--sash));
+  top: calc(42% - var(--mullion) / 2);
+  height: var(--mullion);
+  background: linear-gradient(to bottom, #f3ece1, #ebe3d5 40%, #d9cfbd 80%, #c9bda8);
+}
+
+/* Caras laterales del parteluz: solo se ve la que mira hacia el observador. */
+.mullion::before,
+.mullion::after {
+  content: "";
+  position: absolute;
+}
+
+.mullion--vertical::before,
+.mullion--vertical::after {
+  top: 0;
+  bottom: 0;
+}
+
+.mullion--vertical::before {
+  right: 100%;
+  width: max(0px, calc(var(--px) * -1 * var(--mullion-face)));
+  background: linear-gradient(to right, #b9ad97, #cdc1ac);
+}
+
+.mullion--vertical::after {
+  left: 100%;
+  width: max(0px, calc(var(--px) * var(--mullion-face)));
+  background: linear-gradient(to left, #a99c85, #c4b8a2);
+}
+
+.mullion--horizontal::before,
+.mullion--horizontal::after {
+  left: 0;
+  right: 0;
+}
+
+.mullion--horizontal::before {
+  bottom: 100%;
+  height: max(0px, calc(var(--py) * -1 * var(--mullion-face)));
+  background: linear-gradient(to bottom, #f6f1e8, #e6ddcd);
+}
+
+.mullion--horizontal::after {
+  top: 100%;
+  height: max(0px, calc(var(--py) * var(--mullion-face)));
+  background: linear-gradient(to top, #a3967f, #bdb19b);
+}
+
+/*
+ * Derrame (bisel interior) dibujado con bordes trapezoidales. Al moverse el
+ * observador a la derecha ve mas la jamba izquierda y menos la derecha.
+ */
+.reveal {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-style: solid;
+  border-top-width: max(0px, calc(var(--reveal) + var(--py) * var(--reveal-shift)));
+  border-bottom-width: max(0px, calc(var(--reveal) - var(--py) * var(--reveal-shift)));
+  border-left-width: max(0px, calc(var(--reveal) + var(--px) * var(--reveal-shift)));
+  border-right-width: max(0px, calc(var(--reveal) - var(--px) * var(--reveal-shift)));
+  border-color: var(--paint-deep) var(--paint-shade) #f1ebe0 #ddd3c2;
+  box-shadow:
+    inset 0 0 6px rgba(0, 0, 0, 0.22),
+    inset 0 3px 10px rgba(0, 0, 0, 0.16);
+}
+
+/* El alfeizar es una pieza continua, por eso tapa los ingletes inferiores. */
+.stool {
+  position: absolute;
+  z-index: 1;
+  left: calc(-1 * var(--casing));
+  right: calc(-1 * var(--casing));
+  bottom: calc(-1 * var(--casing-bottom));
+  height: var(--casing-bottom);
+  background: linear-gradient(
+    to bottom,
+    #fbf7f0 0,
+    var(--paint-light) 2px,
+    var(--paint) 40%,
+    #ddd3c2 85%,
+    var(--paint-shade) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 -1px 0 rgba(0, 0, 0, 0.1);
+}
