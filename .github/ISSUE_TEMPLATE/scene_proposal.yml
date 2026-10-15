@@ -1,0 +1,38 @@
+name: Scene proposal
+description: Propose a new view through the window
+labels: ["scene"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would we see?
+      description: Describe the place, the mood and what makes it feel alive.
+    validations:
+      required: true
+  - type: dropdown
+    id: renderer
+    attributes:
+      label: How would you build it?
+      options:
+        - HTML/SVG and CSS only
+        - Canvas
+        - WebGL / Three.js / PixiJS
+        - Not sure yet
+    validations:
+      required: true
+  - type: textarea
+    id: weather
+    attributes:
+      label: How does it react to time and weather?
+      placeholder: Street lamps turn on at dusk, puddles appear when it rains...
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Sketches or inspiration. Any art you plan to reuse must have a license compatible with MIT OR Apache-2.0.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to build this scene myself
