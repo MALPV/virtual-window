@@ -144,6 +144,16 @@ Set on `:root` **and** on the scene container (`[data-scene="..."]`), so you can
 | `data-wind`          | `left`, `right`, `none`                                        |
 | `data-wind-level`    | `calm`, `breeze`, `strong`                                     |
 | `data-temperature`   | `freezing` (below 0), `cold` (below 10), `mild` (below 20), `warm`, `unknown` |
+| `data-focus`         | `true` in focus mode, `false` otherwise                        |
+| `data-motion`        | `reduced` when the user asked to reduce motion (app or OS), `full` otherwise |
+
+### Focus mode and reduced motion
+
+Users can turn on **focus mode** (fewer stimuli) and **reduce motion** from the menu. When either changes, your scene is mounted again with a crossfade, so you only need to read them once.
+
+- Add the class `ambient-detail` to anything that could catch the eye (birds, blinking lights, flickering windows). The frame hides it in focus mode.
+- The frame already halves parallax in focus mode, removes lightning and softens the rain overlay.
+- With reduced motion, all CSS animations are disabled and parallax stops. JavaScript scenes get `context.reducedMotion` and must not animate continuously.
 
 ### Parallax and depth
 
@@ -169,7 +179,8 @@ interface SceneContext {
   readonly parallax: { x: number; y: number };      // latest smoothed viewer position
   onParallax(listener): Unsubscribe;                // every animation frame while the viewer moves
   readonly parallaxMaxPx: number;
-  readonly reducedMotion: boolean;
+  readonly reducedMotion: boolean;                  // remounted when it changes
+  readonly focus: boolean;                          // remounted when it changes
 }
 ```
 
