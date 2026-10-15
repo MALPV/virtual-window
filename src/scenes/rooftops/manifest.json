@@ -1,0 +1,12 @@
+{
+  "id": "rooftops",
+  "name": {
+    "en": "Rooftops",
+    "es": "Tejados"
+  },
+  "author": "Marcos Valenzuela",
+  "license": "MIT OR Apache-2.0",
+  "apiVersion": 1,
+  "renderer": "css",
+  "weatherOverlay": true
+}
