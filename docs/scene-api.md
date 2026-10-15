@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:1420 in any browser. You don't need Rust or Tauri to design a scene: the widget shows up at its real size, can be resized from its corner, and the **simulator** panel lets you pick your scene and try any time of day or weather. In the desktop app (`npm run tauri dev`), toggle the simulator with `Ctrl/Cmd + Shift + D`.
+Open http://localhost:1420 in any browser. You don't need Rust or Tauri to design a scene: the widget shows up at its real size, and the **simulator** panel lets you pick your scene, try any time of day or weather, and resize the window (sliders, size presets, or drag its corner) to check that your scene works from a compact square to a wide panorama. In the desktop app (`npm run tauri dev`), toggle the simulator with `Ctrl/Cmd + Shift + D`; there the size controls resize the native window.
 
 Scenes are discovered automatically: any folder in `src/scenes/` with a `manifest.json` and an `index.ts` is a scene. Folders starting with `_` are ignored.
 
