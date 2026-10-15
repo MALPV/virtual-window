@@ -186,8 +186,9 @@ These keep dozens of community scenes working together. CI enforces the first tw
 5. **Respect the energy budget.** This widget is open all day.
    - Animate only `transform` and `opacity` on HTML elements: the GPU handles them without repainting. Animating inside a large SVG repaints the whole SVG every frame.
    - JavaScript loops must use `createFrameLoop` (30 FPS by default, paused when hidden).
+6. **Nothing changes abruptly.** The engine already blends live updates over 90 seconds, so continuous variables such as `--wind-strength` change a little every second. Never derive an `animation-duration` from them: changing the duration of a running animation makes it jump. Pick durations from discrete attributes like `data-wind-level` instead. Avoid flashes and anything that demands attention.
    - When `reducedMotion` is true (or under `prefers-reduced-motion`), don't run continuous animation. CSS animations are already disabled by the frame in that case.
-6. **Art you didn't create** must be under a compatible license and credited in your manifest's `author` field or a `CREDITS.md` in your folder.
+7. **Art you didn't create** must be under a compatible license and credited in your manifest's `author` field or a `CREDITS.md` in your folder.
 
 ## Versioning
 
