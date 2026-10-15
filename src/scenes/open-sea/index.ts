@@ -5,6 +5,7 @@ import "./scene.css";
 
 export default shaderScene({
   fragment,
+  maxPixelRatio: 1.25,
   overlay: boatMarkup,
   setUniforms(u, world) {
     const { palette } = world;
@@ -18,7 +19,12 @@ export default shaderScene({
     u.float("u_sun_visibility", palette.sunVisibility);
     u.float("u_stars", palette.starsVisibility);
     u.float("u_cloud_deck", palette.cloudDeckOpacity);
+    u.color("u_fog_color", palette.fog);
+    u.float("u_daylight", world.daylight);
+    u.float("u_cloud_cover", world.cloudCover);
+    u.float("u_fog", world.fogDensity);
     u.float("u_wind", world.windStrength);
+    u.float("u_wind_drift", world.windDrift);
     u.float("u_rain", world.rainIntensity);
   },
 });
