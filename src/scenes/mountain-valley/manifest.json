@@ -1,0 +1,12 @@
+{
+  "id": "mountain-valley",
+  "name": {
+    "en": "Mountain valley",
+    "es": "Valle de montaña"
+  },
+  "author": "Marcos Valenzuela",
+  "license": "MIT OR Apache-2.0",
+  "apiVersion": 1,
+  "renderer": "webgl",
+  "weatherOverlay": true
+}
