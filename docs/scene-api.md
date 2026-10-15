@@ -55,7 +55,24 @@ import "./scene.css";
 export default htmlScene(markup);
 ```
 
-JavaScript scene:
+Shader scene (WebGL2). The helper handles the canvas, the FPS cap, reduced motion, focus mode, context loss and GPU cleanup; you write the fragment shader and pass the world as uniforms:
+
+```ts
+import { shaderScene } from "../api";
+import fragment from "./scene.frag?raw";
+
+export default shaderScene({
+  fragment,
+  setUniforms(u, world) {
+    u.float("u_sun_altitude", world.sunAltitude);
+    u.color("u_sky_top", world.palette.skyTop); // 0..255 tuple uploaded as 0..1
+  },
+});
+```
+
+`u_resolution`, `u_time` and `u_parallax` (-1..1, y down) are always set. Shaders in scene folders (`.frag`, `.vert`) are parsed in strict mode by the test suite, which catches syntax errors and undeclared names without a GPU. See `src/scenes/mountain-valley` for a physically based sky.
+
+Any other JavaScript scene:
 
 ```ts
 import { createFrameLoop, defineScene } from "../api";
