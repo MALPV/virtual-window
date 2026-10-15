@@ -1,0 +1,66 @@
+.simulator {
+  position: fixed;
+  z-index: 1000;
+  top: 8px;
+  left: 8px;
+  width: 250px;
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(18, 20, 26, 0.92);
+  color: #e8eaf0;
+  font: 11px/1.4 system-ui, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.simulator[hidden] {
+  display: none;
+}
+
+.simulator__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.simulator__hint {
+  opacity: 0.55;
+}
+
+.simulator__row {
+  display: grid;
+  grid-template-columns: 82px 1fr 34px;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.simulator__label {
+  opacity: 0.8;
+}
+
+.simulator__control {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+
+.simulator__row select.simulator__control,
+.simulator__row input[type="checkbox"] {
+  grid-column: 2 / span 2;
+  justify-self: start;
+}
+
+.simulator__row select.simulator__control {
+  justify-self: stretch;
+}
+
+.simulator__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
