@@ -108,6 +108,7 @@ Set on `:root`, so they are available everywhere. Numbers are unitless: combine 
 | `--sun-altitude`    | -90 to 90   | Sun degrees above the horizon (negative: below).           |
 | `--sun-x`           | 0 to 1      | Horizontal sun position in the window (0 left, 1 right).   |
 | `--daylight`        | 0 to 1      | 0 at night, 1 in full daylight. Smooth through twilight.   |
+| `--golden-hour`     | 0 to 1      | Peaks while the sun is low (warm light). Mix three palettes: night, golden hour and day. |
 | `--cloud-cover`     | 0 to 1      | Fraction of the sky covered by clouds.                     |
 | `--rain-intensity`  | 0 to 1      | 0 unless it rains.                                         |
 | `--snow-intensity`  | 0 to 1      | 0 unless it snows.                                         |

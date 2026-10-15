@@ -61,6 +61,7 @@ export function blendWorld(from: WorldState, to: WorldState, t: number): WorldSt
     sunAltitude,
     sunX: lerp(from.sunX, to.sunX, t),
     daylight: lerp(from.daylight, to.daylight, t),
+    goldenHour: lerp(from.goldenHour, to.goldenHour, t),
     dayPhase: dayPhaseOf(sunAltitude),
     condition: halfway ? to.condition : from.condition,
     cloudCover: lerp(from.cloudCover, to.cloudCover, t),

@@ -65,6 +65,8 @@ export interface WorldState {
   sunX: number;
   /** 0 (night) to 1 (full day). */
   daylight: number;
+  /** 0..1, peaks while the sun is just above the horizon (warm, low light). */
+  goldenHour: number;
   dayPhase: DayPhase;
   condition: Condition;
   /** 0..1 */
@@ -231,6 +233,11 @@ function precipitationOf(weather: WeatherReport | null): Precipitation {
   return "none";
 }
 
+/** Warm light while the sun is low: rises through civil twilight, fades as the sun climbs. */
+export function goldenHourOf(elevation: number): number {
+  return smoothstep(-6, 0, elevation) * (1 - smoothstep(6, 16, elevation));
+}
+
 export function dayPhaseOf(elevation: number): DayPhase {
   if (elevation >= 6) return "day";
   if (elevation <= -12) return "night";
@@ -287,6 +294,7 @@ export function deriveWorld(snapshot: EnvironmentSnapshot): WorldState {
     sunAltitude: elevation,
     sunX: clamp(snapshot.sunTrack, 0, 1),
     daylight,
+    goldenHour: goldenHourOf(elevation),
     dayPhase: dayPhaseOf(elevation),
     condition: weather?.condition ?? "clear",
     cloudCover,

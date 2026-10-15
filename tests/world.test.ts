@@ -48,6 +48,12 @@ describe("deriveWorld", () => {
     expect(deriveWorld(snapshot({ sunElevation: -30 })).dayPhase).toBe("night");
   });
 
+  it("peaks the golden hour while the sun is low", () => {
+    expect(deriveWorld(snapshot({ sunElevation: -20 })).goldenHour).toBe(0);
+    expect(deriveWorld(snapshot({ sunElevation: 3 })).goldenHour).toBeCloseTo(1);
+    expect(deriveWorld(snapshot({ sunElevation: 40 })).goldenHour).toBe(0);
+  });
+
   it("shows stars only on clear nights", () => {
     const clearNight = deriveWorld(snapshot({ sunElevation: -30, weather: weather({ cloudCover: 0 }) }));
     const overcastNight = deriveWorld(
