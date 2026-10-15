@@ -231,25 +231,25 @@ function precipitationOf(weather: WeatherReport | null): Precipitation {
   return "none";
 }
 
-function dayPhaseOf(elevation: number): DayPhase {
+export function dayPhaseOf(elevation: number): DayPhase {
   if (elevation >= 6) return "day";
   if (elevation <= -12) return "night";
   return "twilight";
 }
 
-function windLevelOf(strength: number): WindLevel {
+export function windLevelOf(strength: number): WindLevel {
   if (strength < 0.2) return "calm";
   if (strength < 0.55) return "breeze";
   return "strong";
 }
 
-function windDirectionOf(drift: number): WindDirection {
+export function windDirectionOf(drift: number): WindDirection {
   if (drift > WIND_DIRECTION_THRESHOLD) return "right";
   if (drift < -WIND_DIRECTION_THRESHOLD) return "left";
   return "none";
 }
 
-function temperatureBandOf(temperature: number | null): TemperatureBand {
+export function temperatureBandOf(temperature: number | null): TemperatureBand {
   if (temperature === null) return "unknown";
   if (temperature < 0) return "freezing";
   if (temperature < 10) return "cold";
