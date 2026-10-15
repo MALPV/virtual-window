@@ -32,8 +32,28 @@ function siblingChunks(file: string): Record<string, string> {
   );
 }
 
+// Palabras reservadas de GLSL ES 3.0 que el analizador acepta pero los drivers rechazan al compilar.
+const RESERVED_WORDS = [
+  "active", "asm", "cast", "class", "common", "default", "double", "enum", "extern", "external", "filter",
+  "fixed", "goto", "half", "inline", "input", "interface", "long", "namespace", "noinline", "output",
+  "packed", "partition", "public", "resource", "sample", "short", "sizeof", "static", "superp", "template",
+  "this", "typedef", "union", "unsigned", "using", "volatile",
+];
+const RESERVED_PATTERN = new RegExp(`\\b(${RESERVED_WORDS.join("|")})\\b`);
+
 function parseStrict(source: string, stage: "fragment" | "vertex"): void {
   parser.parse(source, { stage, failOnWarn: true, quiet: true });
+}
+
+function reservedWordsIn(source: string): string[] {
+  return source
+    .split("\n")
+    .map((line) => line.replace(/\/\/.*$/, ""))
+    .filter((line) => !line.trim().startsWith("#"))
+    .flatMap((line, index) => {
+      const match = RESERVED_PATTERN.exec(line);
+      return match ? [`line ${index + 1}: ${match[1]}`] : [];
+    });
 }
 
 const files = ROOTS.flatMap(shaderFiles);
@@ -51,6 +71,7 @@ describe("shaders", () => {
     const stage = STAGES[extname(file) as keyof typeof STAGES];
     const source = resolveIncludes(readFileSync(file, "utf8"), siblingChunks(file));
     expect(() => parseStrict(source, stage)).not.toThrow();
+    expect(reservedWordsIn(source)).toEqual([]);
   });
 });
 
