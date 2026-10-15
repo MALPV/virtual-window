@@ -1,0 +1,11 @@
+{
+  "id": "my-scene",
+  "name": {
+    "en": "My scene"
+  },
+  "author": "Your Name",
+  "license": "MIT OR Apache-2.0",
+  "apiVersion": 1,
+  "renderer": "css",
+  "weatherOverlay": true
+}

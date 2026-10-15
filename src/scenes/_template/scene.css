@@ -1,0 +1,50 @@
+[data-scene="my-scene"] .my-scene {
+  position: absolute;
+  inset: 0;
+}
+
+[data-scene="my-scene"] .my-scene__sky {
+  --depth: 1;
+  background: linear-gradient(to bottom, var(--sky-top), var(--sky-middle) 55%, var(--sky-horizon));
+}
+
+[data-scene="my-scene"] .my-scene__sun {
+  position: absolute;
+  top: calc(70% - min(var(--sun-altitude), 60) / 60 * 55%);
+  left: calc(10% + var(--sun-x) * 80%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sun-color);
+  opacity: var(--sun-visibility);
+  transform: translate(-50%, -50%);
+}
+
+[data-scene="my-scene"] .my-scene__ground {
+  --depth: 0.4;
+}
+
+[data-scene="my-scene"] .my-scene__hill {
+  position: absolute;
+  right: -10%;
+  bottom: 0;
+  left: -10%;
+  height: 38%;
+  border-radius: 50% 50% 0 0;
+  background: color-mix(in srgb, #4f7a4a calc(var(--land-brightness) * 100%), #05070a);
+  transform-origin: 50% 100%;
+  animation: my-scene-breathe 6s ease-in-out infinite alternate;
+}
+
+[data-scene="my-scene"][data-wind-level="strong"] .my-scene__hill {
+  animation-duration: 2s;
+}
+
+@keyframes my-scene-breathe {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(1.03);
+  }
+}
