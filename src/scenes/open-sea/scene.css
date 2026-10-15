@@ -1,8 +1,3 @@
-[data-scene="open-sea"] .open-sea__canvas {
-  --depth: 0;
-  display: block;
-}
-
 /* Velero sobre el horizonte del shader (42% desde abajo), con la misma profundidad que el mar lejano. */
 [data-scene="open-sea"] .open-sea__boat-layer {
   --depth: 0.7;

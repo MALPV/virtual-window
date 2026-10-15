@@ -16,6 +16,12 @@ export {
   type WorldPalette,
   type WorldState,
 } from "../engine/world";
+export {
+  FULLSCREEN_VERTEX_SHADER,
+  shaderScene,
+  type ShaderSceneOptions,
+  type UniformWriter,
+} from "./shader-scene";
 export type { SceneContext, SceneInstance, SceneManifest, SceneModule, Unsubscribe } from "./types";
 
 import type { SceneModule } from "./types";

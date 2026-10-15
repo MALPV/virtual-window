@@ -26,8 +26,8 @@ float hash(vec2 p) {
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution;
   float aspect = u_resolution.x / u_resolution.y;
-  // El horizonte esta lejos: se desplaza casi como el cielo con el parallax.
-  float horizon = 0.42 + u_parallax.y * 0.035;
+  // El horizonte esta lejos: se desplaza casi como el cielo con el parallax (y positiva hacia abajo).
+  float horizon = 0.42 - u_parallax.y * 0.035;
   vec2 p = vec2(uv.x - u_parallax.x * 0.035, uv.y);
 
   float sun_height = clamp(u_sun_altitude, -10.0, 70.0) / 70.0;
