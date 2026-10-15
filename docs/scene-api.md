@@ -191,4 +191,4 @@ These keep dozens of community scenes working together. CI enforces the first tw
 
 ## Versioning
 
-`apiVersion` changes only on breaking changes to anything documented here. Adding variables or attributes is not breaking. When it changes, the engine will keep supporting the previous version for at least one minor release, and scenes in this repository will be migrated in the same pull request.
+`apiVersion` changes only on breaking changes to anything documented here. Adding variables or attributes is not breaking. A pull request that bumps it must migrate every scene in this repository.
