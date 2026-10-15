@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { applyWorldToCss } from "./engine/css-bridge";
+import { GlassRain } from "./frame/glass-rain";
 import { ParallaxTracker } from "./engine/parallax";
 import {
   applySettingsToDom,
@@ -115,14 +116,22 @@ async function main(): Promise<void> {
     preferences: { focus: settings.focus, reducedMotion: reducedMotion() },
   });
 
+  const glassRain = new GlassRain(requireElement("glass-rain") as HTMLCanvasElement, root);
+  glassRain.setPreferences({ focus: settings.focus, reducedMotion: reducedMotion() });
+
   applyWorldToCss(store.world, root, manager.hosts);
-  store.subscribe((world) => applyWorldToCss(world, root, manager.hosts));
+  glassRain.update(store.world);
+  store.subscribe((world) => {
+    applyWorldToCss(world, root, manager.hosts);
+    glassRain.update(world);
+  });
 
   const applySettings = async (next: Settings) => {
     const sceneChanged = next.scene !== settings.scene;
     settings = next;
     applySettingsToDom(settings, root, reducedMotion());
     parallax.setScale(parallaxScale(settings, reducedMotion()));
+    glassRain.setPreferences({ focus: settings.focus, reducedMotion: reducedMotion() });
     await manager.updatePreferences({ focus: settings.focus, reducedMotion: reducedMotion() });
     if (sceneChanged) await showScene(manager, settings.scene);
   };

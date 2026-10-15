@@ -344,6 +344,33 @@ body {
   );
 }
 
+/* Cristal mojado: el paisaje se ve algo desenfocado mientras llueve. */
+.glass-wet {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(calc(var(--rain-intensity, 0) * 2.2px));
+  backdrop-filter: blur(calc(var(--rain-intensity, 0) * 2.2px));
+}
+
+:root[data-precipitation="rain"] .glass-wet {
+  display: block;
+}
+
+.glass-rain {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.glass-rain[data-active="true"] {
+  display: block;
+}
+
 .glass-drops,
 .frost {
   position: absolute;
@@ -352,13 +379,19 @@ body {
   transition: opacity var(--environment-transition);
 }
 
+/* Gotas estaticas: solo como respaldo cuando no hay WebGL2 para la lluvia en el cristal. */
 .glass-drops {
+  display: none;
   opacity: var(--rain-intensity, 0);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' fill='white' fill-opacity='0.16' stroke='white' stroke-opacity='0.4' stroke-width='0.6'%3E%3Ccircle cx='14' cy='22' r='2.4'/%3E%3Ccircle cx='60' cy='12' r='1.4'/%3E%3Ccircle cx='98' cy='40' r='3'/%3E%3Ccircle cx='36' cy='70' r='1.8'/%3E%3Ccircle cx='120' cy='96' r='2'/%3E%3Ccircle cx='76' cy='104' r='2.8'/%3E%3Ccircle cx='20' cy='122' r='1.2'/%3E%3Cpath d='M98 46q-1 14 0 26' fill='none'/%3E%3C/svg%3E");
   background-size: 140px 140px;
 }
 
 /* La escarcha se forma desde los bordes de cada cristal y se acumula mas abajo. */
+html[data-glass-rain="fallback"] .glass-drops {
+  display: block;
+}
+
 .frost {
   display: grid;
   grid-template-columns: var(--mullion-v1) 1fr;
