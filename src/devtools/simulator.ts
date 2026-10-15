@@ -1,3 +1,4 @@
+import { BRIGHTNESS_LEVELS, FRAME_COLORS, FRAME_STYLES, type Settings } from "../engine/settings";
 import { CONDITIONS, type Condition, type EnvironmentSnapshot } from "../engine/world";
 import type { WorldStore } from "../engine/world-store";
 import type { SceneEntry } from "../scenes/registry";
@@ -12,7 +13,10 @@ export interface SimulatorOptions {
   store: WorldStore;
   scenes: SceneEntry[];
   activeSceneId: () => string | null;
-  selectScene: (id: string) => Promise<boolean>;
+  selectScene: (id: string) => Promise<unknown>;
+  settings: () => Settings;
+  /** Applies appearance settings for this session only (the desktop app saves them from its menu). */
+  previewSettings: (patch: Partial<Settings>) => Promise<unknown>;
   openByDefault: boolean;
   inTauri: boolean;
 }
@@ -213,10 +217,50 @@ export function mountSimulator(options: SimulatorOptions): void {
     }
   });
 
+  appendAppearanceSection(panel, options);
   appendWindowSection(panel, createWindowSizeController(options.inTauri));
 
   document.body.append(panel);
   apply();
+}
+
+function appendAppearanceSection(panel: HTMLElement, options: SimulatorOptions): void {
+  panel.append(element("div", "simulator__section", options.inTauri ? "Appearance (preview)" : "Appearance"));
+  const current = options.settings();
+  const preview = (patch: Partial<Settings>) => {
+    options.previewSettings(patch).catch((error) => console.error("Failed to preview settings:", error));
+  };
+
+  const style = select(
+    FRAME_STYLES.map((value) => [value, value] as const),
+    current.frameStyle,
+  );
+  style.addEventListener("change", () => preview({ frameStyle: style.value as Settings["frameStyle"] }));
+  panel.append(row("Frame", style));
+
+  const color = select(
+    FRAME_COLORS.map((value) => [value, value] as const),
+    current.frameColor,
+  );
+  color.addEventListener("change", () => preview({ frameColor: color.value as Settings["frameColor"] }));
+  panel.append(row("Color", color));
+
+  const brightness = select(
+    BRIGHTNESS_LEVELS.map((level) => [String(level), `${level}%`] as const),
+    String(current.brightness),
+  );
+  brightness.addEventListener("change", () => preview({ brightness: Number(brightness.value) }));
+  panel.append(row("Brightness", brightness));
+
+  const checkbox = (label: string, checked: boolean, onChange: (checked: boolean) => void) => {
+    const input = element("input", "simulator__control");
+    input.type = "checkbox";
+    input.checked = checked;
+    input.addEventListener("change", () => onChange(input.checked));
+    panel.append(row(label, input));
+  };
+  checkbox("Focus", current.focus, (focus) => preview({ focus }));
+  checkbox("Less motion", current.reduceMotion, (reduceMotion) => preview({ reduceMotion }));
 }
 
 function appendWindowSection(panel: HTMLElement, controller: WindowSizeController): void {
