@@ -1,8 +1,8 @@
 {
-  "id": "mountain-valley",
+  "id": "mountains",
   "name": {
-    "en": "Mountain valley",
-    "es": "Valle de montaña"
+    "en": "Mountains",
+    "es": "Montañas"
   },
   "author": "Marcos Valenzuela",
   "license": "MIT OR Apache-2.0",

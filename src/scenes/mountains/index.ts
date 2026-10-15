@@ -1,12 +1,15 @@
-import { shaderScene } from "../api";
-import fragment from "./valley.frag?raw";
+import { resolveIncludes, shaderScene } from "../api";
+import common from "./common.glsl?raw";
+import terrain from "./terrain.frag?raw";
+import view from "./view.frag?raw";
 
+const CHUNKS = { "common.glsl": common };
 // Temperatura neutra cuando no se conoce: ni nieve extra ni deshielo.
 const UNKNOWN_TEMPERATURE = 10;
 
 export default shaderScene({
-  fragment,
-  // La dispersion atmosferica es costosa por pixel: se limita la densidad del lienzo.
+  fragment: resolveIncludes(view, CHUNKS),
+  cached: { fragment: resolveIncludes(terrain, CHUNKS) },
   maxPixelRatio: 1.25,
   setUniforms(u, world) {
     const { palette } = world;
