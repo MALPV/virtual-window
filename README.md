@@ -10,7 +10,7 @@ No text, no buttons, no setup. It works anywhere in the world, on macOS, Windows
 - **Real weather.** Clouds, overcast skies, fog, rain, snow, thunderstorms, raindrops on the glass and frost on the panes below 1 °C. Rain, clouds and trees follow the wind.
 - **Alive.** Drifting clouds, swaying trees, birds by day, fireflies on warm nights, chimney smoke, city lights at dusk.
 - **Depth.** An architectural frame with an inner bevel, mullions and a reflective pane. The cursor stands in for your head: far things shift more than near ones.
-- **Scenes.** Pick a view from the right-click menu: Mountain valley (realistic, with a physically based sky), Alpine lake, Rooftops (stylized) and Open sea. Anyone can add a new one. Switching crossfades, and weather changes blend in over a minute and a half: nothing ever jumps.
+- **Scenes.** Pick a view from the right-click menu: Mountains (realistic 3D terrain with a physically based sky), Alpine lake, Rooftops (stylized) and Open sea. Anyone can add a new one. Switching crossfades, and weather changes blend in over a minute and a half: nothing ever jumps.
 - **Your window.** Classic, modern or industrial frame in six colors, adjustable brightness, focus mode with fewer stimuli, reduce motion, and always on top. It remembers where you left it and at what size, so it can live next to your editor or browser.
 - **Light.** Built with Tauri: a native window, a few MB, animations on the GPU, paused when hidden.
 

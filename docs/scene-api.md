@@ -70,7 +70,11 @@ export default shaderScene({
 });
 ```
 
-`u_resolution`, `u_time` and `u_parallax` (-1..1, y down) are always set. Shaders in scene folders (`.frag`, `.vert`) are parsed in strict mode by the test suite, which catches syntax errors and undeclared names without a GPU. See `src/scenes/mountain-valley` for a physically based sky.
+`u_resolution`, `u_time` and `u_parallax` (-1..1, y down) are always set. Shaders in scene folders (`.frag`, `.vert`) are parsed in strict mode by the test suite, which catches syntax errors and undeclared names without a GPU.
+
+**Expensive scenes.** The camera of a window never moves, so terrain, lighting and sky scattering don't need to run every frame. Pass them as `cached: { fragment }`: that pass is rendered into a texture only when the world, the parallax or the size change (at half resolution while the viewer moves, refined when they stop), and your per-frame `fragment` reads it as `u_cached` to add only what moves (clouds, water, mist). Share code between passes with `#include "chunk.glsl"` and `resolveIncludes()`. See `src/scenes/mountains`.
+
+**Feel like a window, not a picture.** Project rays through the fixed window plane from an eye that moves with the parallax, instead of shifting the image: distant things then follow the viewer while near things stay, and parts of the landscape appear and hide behind ridges. Put something close (a few meters away) so the depth is noticeable.
 
 Any other JavaScript scene:
 
