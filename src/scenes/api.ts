@@ -18,7 +18,9 @@ export {
 } from "../engine/world";
 export {
   FULLSCREEN_VERTEX_SHADER,
+  resolveIncludes,
   shaderScene,
+  type CachedPassOptions,
   type ShaderSceneOptions,
   type UniformWriter,
 } from "./shader-scene";
