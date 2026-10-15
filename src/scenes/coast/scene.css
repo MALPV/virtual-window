@@ -163,6 +163,26 @@
   --depth: 0.12;
 }
 
+[data-scene="coast"] .coast__stop--rock-light {
+  stop-color: var(--coast-rock-light);
+}
+
+[data-scene="coast"] .coast__stop--rock-mid {
+  stop-color: var(--coast-rock-mid);
+}
+
+[data-scene="coast"] .coast__stop--rock-dark {
+  stop-color: var(--coast-rock-dark);
+}
+
+[data-scene="coast"] .coast__stop--sand {
+  stop-color: var(--coast-sand);
+}
+
+[data-scene="coast"] .coast__stop--sand-wet {
+  stop-color: var(--coast-sand-wet);
+}
+
 [data-scene="coast"] .coast__stop--sky-top {
   stop-color: var(--coast-sky-top);
 }
@@ -187,16 +207,49 @@
   stop-color: var(--coast-sea-near);
 }
 
+/*
+ * Las caras claras miran a la izquierda y las oscuras a la derecha: con el sol a la izquierda
+ * el contraste es maximo; al pasar el sol a la derecha ambas se suavizan y la luz cambia de lado.
+ */
+[data-scene="coast"] .coast {
+  --coast-left-lit: clamp(0, (0.75 - var(--sun-x, 0.72)) * 1.6, 1);
+}
+
 [data-scene="coast"] .coast__rock-light {
   fill: var(--coast-rock-light);
+  opacity: calc(0.35 + 0.65 * var(--coast-left-lit));
+  transition: opacity var(--environment-transition);
 }
 
 [data-scene="coast"] .coast__rock-mid {
   fill: var(--coast-rock-mid);
 }
 
+/* Las rocas grandes llevan un degradado: luz arriba, sombra al pie. */
+[data-scene="coast"] .coast__far .coast__rock-mid {
+  fill: url(#coast-rock-far);
+}
+
+[data-scene="coast"] .coast__beach .coast__rock-mid {
+  fill: url(#coast-rock-beach);
+}
+
+[data-scene="coast"] .coast__mid .coast__rock-mid {
+  fill: url(#coast-rock-mid);
+}
+
+[data-scene="coast"] .coast__near .coast__rock-mid {
+  fill: url(#coast-rock-near);
+}
+
+[data-scene="coast"] .coast__beach .coast__sand {
+  fill: url(#coast-sand-beach);
+}
+
 [data-scene="coast"] .coast__rock-dark {
   fill: var(--coast-rock-dark);
+  opacity: calc(0.45 + 0.55 * var(--coast-left-lit));
+  transition: opacity var(--environment-transition);
 }
 
 [data-scene="coast"] .coast__veg-light {
@@ -249,11 +302,13 @@
   stroke-width: 1.2;
 }
 
+/* Franja de arena mojada: ancha y suave, no un contorno. */
 [data-scene="coast"] .coast__wet {
   fill: none;
   stroke: var(--coast-sand-wet);
-  stroke-width: 14;
+  stroke-width: 22;
   stroke-linecap: round;
+  stroke-opacity: 0.55;
 }
 
 [data-scene="coast"] .coast__sea-line {
@@ -274,12 +329,20 @@
 }
 
 /* En SVG, los px de una transformacion CSS equivalen a unidades del viewBox. */
-[data-scene="coast"] .coast__sun {
+[data-scene="coast"] .coast__sun-disc {
   fill: var(--sun-color, #fff8ea);
+}
+
+[data-scene="coast"] .coast__sun-halo {
+  fill: var(--sun-color, #fff8ea);
+  opacity: 0.18;
+}
+
+[data-scene="coast"] .coast__sun {
   opacity: var(--sun-visibility, 1);
   transform: translate(
     calc((40 + var(--sun-x, 0.72) * 320) * 1px),
-    calc((300 - min(var(--sun-altitude, 12), 60) / 60 * 240) * 1px)
+    calc((255 - min(var(--sun-altitude, 12), 60) / 60 * 210) * 1px)
   );
   transition:
     transform var(--environment-transition),
@@ -308,7 +371,7 @@
 }
 
 [data-scene="coast"] .coast__cloud--1 {
-  top: calc(100% - (600 - 110) * var(--s));
+  top: calc(100% - (645 - 110) * var(--s));
   width: calc(120 * var(--s));
   --base: 0.8;
   --threshold: 0.1;
@@ -317,7 +380,7 @@
 }
 
 [data-scene="coast"] .coast__cloud--2 {
-  top: calc(100% - (600 - 170) * var(--s));
+  top: calc(100% - (645 - 170) * var(--s));
   width: calc(90 * var(--s));
   --base: 0.7;
   --threshold: 0.35;
@@ -326,7 +389,7 @@
 }
 
 [data-scene="coast"] .coast__cloud--3 {
-  top: calc(100% - (600 - 60) * var(--s));
+  top: calc(100% - (645 - 60) * var(--s));
   width: calc(150 * var(--s));
   --base: 0.75;
   --threshold: 0.6;
@@ -417,7 +480,7 @@
 }
 
 [data-scene="coast"] .coast__glint--1 {
-  top: calc(100% - (600 - 312) * var(--s));
+  top: calc(100% - (645 - 312) * var(--s));
   left: calc(50% + (60 - 200) * var(--s));
   width: calc(18 * var(--s));
   --period: 3.1s;
@@ -425,7 +488,7 @@
 }
 
 [data-scene="coast"] .coast__glint--2 {
-  top: calc(100% - (600 - 326) * var(--s));
+  top: calc(100% - (645 - 326) * var(--s));
   left: calc(50% + (110 - 200) * var(--s));
   width: calc(24 * var(--s));
   --period: 2.7s;
@@ -433,7 +496,7 @@
 }
 
 [data-scene="coast"] .coast__glint--3 {
-  top: calc(100% - (600 - 340) * var(--s));
+  top: calc(100% - (645 - 340) * var(--s));
   left: calc(50% + (150 - 200) * var(--s));
   width: calc(30 * var(--s));
   --period: 3.6s;
@@ -441,7 +504,7 @@
 }
 
 [data-scene="coast"] .coast__glint--4 {
-  top: calc(100% - (600 - 352) * var(--s));
+  top: calc(100% - (645 - 352) * var(--s));
   left: calc(50% + (90 - 200) * var(--s));
   width: calc(20 * var(--s));
   --period: 2.9s;
@@ -449,7 +512,7 @@
 }
 
 [data-scene="coast"] .coast__glint--5 {
-  top: calc(100% - (600 - 334) * var(--s));
+  top: calc(100% - (645 - 334) * var(--s));
   left: calc(50% + (40 - 200) * var(--s));
   width: calc(16 * var(--s));
   --period: 3.4s;
@@ -474,7 +537,7 @@
 }
 
 [data-scene="coast"] .coast__tree--1 {
-  top: calc(100% - (600 - 236) * var(--s));
+  top: calc(100% - (645 - 236) * var(--s));
   left: calc(50% + (282 - 200) * var(--s));
   width: calc(34 * var(--s));
   height: calc(23 * var(--s));
@@ -483,7 +546,7 @@
 }
 
 [data-scene="coast"] .coast__tree--2 {
-  top: calc(100% - (600 - 208) * var(--s));
+  top: calc(100% - (645 - 208) * var(--s));
   left: calc(50% + (322 - 200) * var(--s));
   width: calc(42 * var(--s));
   height: calc(28 * var(--s));
@@ -492,7 +555,7 @@
 }
 
 [data-scene="coast"] .coast__tree--3 {
-  top: calc(100% - (600 - 150) * var(--s));
+  top: calc(100% - (645 - 150) * var(--s));
   left: calc(50% + (352 - 200) * var(--s));
   width: calc(64 * var(--s));
   height: calc(43 * var(--s));
@@ -507,7 +570,7 @@
 }
 
 [data-scene="coast"] .coast__plants--left {
-  top: calc(100% - (600 - 470) * var(--s));
+  top: calc(100% - (645 - 470) * var(--s));
   left: calc(50% + (-10 - 200) * var(--s));
   width: calc(190 * var(--s));
   height: calc(140 * var(--s));
@@ -515,7 +578,7 @@
 }
 
 [data-scene="coast"] .coast__plants--right {
-  top: calc(100% - (600 - 494) * var(--s));
+  top: calc(100% - (645 - 494) * var(--s));
   left: calc(50% + (296 - 200) * var(--s));
   width: calc(120 * var(--s));
   height: calc(110 * var(--s));
@@ -577,7 +640,7 @@
 }
 
 [data-scene="coast"] .coast__foam--1 {
-  top: calc(100% - (600 - 312) * var(--s));
+  top: calc(100% - (645 - 312) * var(--s));
   left: calc(50% + (200 - 200) * var(--s));
   width: calc(40 * var(--s));
   height: calc(8 * var(--s));
@@ -586,7 +649,7 @@
 }
 
 [data-scene="coast"] .coast__foam--2 {
-  top: calc(100% - (600 - 346) * var(--s));
+  top: calc(100% - (645 - 346) * var(--s));
   left: calc(50% + (206 - 200) * var(--s));
   width: calc(46 * var(--s));
   height: calc(9 * var(--s));
@@ -595,7 +658,7 @@
 }
 
 [data-scene="coast"] .coast__foam--3 {
-  top: calc(100% - (600 - 380) * var(--s));
+  top: calc(100% - (645 - 380) * var(--s));
   left: calc(50% + (243 - 200) * var(--s));
   width: calc(54 * var(--s));
   height: calc(10 * var(--s));
@@ -604,7 +667,7 @@
 }
 
 [data-scene="coast"] .coast__foam--4 {
-  top: calc(100% - (600 - 445) * var(--s));
+  top: calc(100% - (645 - 445) * var(--s));
   left: calc(50% + (196 - 200) * var(--s));
   width: calc(60 * var(--s));
   height: calc(11 * var(--s));
@@ -613,7 +676,7 @@
 }
 
 [data-scene="coast"] .coast__foam--5 {
-  top: calc(100% - (600 - 526) * var(--s));
+  top: calc(100% - (645 - 526) * var(--s));
   left: calc(50% + (147 - 200) * var(--s));
   width: calc(70 * var(--s));
   height: calc(12 * var(--s));
