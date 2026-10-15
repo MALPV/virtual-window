@@ -31,6 +31,8 @@ export class ParallaxTracker {
   private readonly target: ParallaxState = { x: 0, y: 0 };
   private readonly current: ParallaxState = { x: 0, y: 0 };
   private readonly listeners = new Set<Listener>();
+  private readonly raw: ParallaxState = { x: 0, y: 0 };
+  private scale = 1;
   private frameId: number | null = null;
   private lastFrameTime = 0;
 
@@ -50,9 +52,20 @@ export class ParallaxTracker {
     this.startPointerTracking();
   }
 
+  /**
+   * Scales the effect: 1 normal, 0.5 in focus mode, 0 with reduced motion.
+   * The change is smoothed like any other movement.
+   */
+  setScale(scale: number): void {
+    this.scale = clamp(scale, 0, 1);
+    this.setTarget(this.raw);
+  }
+
   private setTarget(state: ParallaxState): void {
-    this.target.x = clamp(state.x, -1, 1);
-    this.target.y = clamp(state.y, -1, 1);
+    this.raw.x = clamp(state.x, -1, 1);
+    this.raw.y = clamp(state.y, -1, 1);
+    this.target.x = this.raw.x * this.scale;
+    this.target.y = this.raw.y * this.scale;
     if (this.frameId === null) this.frameId = requestAnimationFrame(this.renderFrame);
   }
 

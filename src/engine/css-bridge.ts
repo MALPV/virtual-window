@@ -98,15 +98,18 @@ export function worldDataAttributes(world: WorldState): Record<(typeof WORLD_DAT
   };
 }
 
-export function applyWorldToCss(world: WorldState, root: HTMLElement, sceneHost: HTMLElement): void {
+export function applyWorldDataAttributes(world: WorldState, element: HTMLElement): void {
+  for (const [name, value] of Object.entries(worldDataAttributes(world))) element.setAttribute(name, value);
+}
+
+/** Publishes the world on :root and on every scene container (two coexist during a crossfade). */
+export function applyWorldToCss(world: WorldState, root: HTMLElement, sceneHosts: Iterable<HTMLElement>): void {
   const values = worldCssValues(world);
   for (const name of WORLD_CSS_VARIABLES) {
     const value = values[name];
     if (value === undefined) root.style.removeProperty(name);
     else root.style.setProperty(name, value);
   }
-  for (const [name, value] of Object.entries(worldDataAttributes(world))) {
-    root.setAttribute(name, value);
-    sceneHost.setAttribute(name, value);
-  }
+  applyWorldDataAttributes(world, root);
+  for (const host of sceneHosts) applyWorldDataAttributes(world, host);
 }

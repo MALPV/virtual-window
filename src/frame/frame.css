@@ -17,10 +17,24 @@
   --mullion: 6px;
   --mullion-face: 4px;
 
-  --paint: #ebe3d5;
-  --paint-light: #f7f2e9;
-  --paint-shade: #d2c7b4;
-  --paint-deep: #b7ab95;
+  /* Todo el marco se deriva de un color base para que cada color conserve luces y sombras. */
+  --frame-base: #ebe3d5;
+  --paint: var(--frame-base);
+  --paint-lighter: color-mix(in srgb, var(--frame-base), white 70%);
+  --paint-light: color-mix(in srgb, var(--frame-base), white 45%);
+  --paint-tint: color-mix(in srgb, var(--frame-base), white 15%);
+  --paint-soft: color-mix(in srgb, var(--frame-base), black 6%);
+  --paint-shade: color-mix(in srgb, var(--frame-base), black 11%);
+  --paint-deep: color-mix(in srgb, var(--frame-base), black 22%);
+  --paint-deeper: color-mix(in srgb, var(--frame-base), black 30%);
+
+  /* Reticula de parteluces del estilo clasico: cruz con el travesano algo por encima del centro. */
+  --mullion-v1: 50%;
+  --mullion-v2: 50%;
+  --mullion-h1: 42%;
+  --mullion-h2: 42%;
+
+  --brightness: 1;
 
   --environment-transition: 4s ease;
 }
@@ -71,7 +85,7 @@ body {
   inset: 0;
   border-style: solid;
   border-width: var(--casing) var(--casing) var(--casing-bottom);
-  border-color: #efe8db #e3dacb var(--paint) #e9e1d3;
+  border-color: var(--paint-tint) var(--paint-soft) var(--paint) color-mix(in srgb, var(--frame-base), white 6%);
 }
 
 .casing::before {
@@ -102,10 +116,22 @@ body {
     0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 
+.scene-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Cada escena vive en su propio contenedor; al cambiar de escena la nueva aparece con un fundido. */
 .scene-host {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  transition: opacity 1.2s ease;
+}
+
+.scene-host[data-state="entering"] {
+  opacity: 0;
 }
 
 /*
@@ -297,7 +323,7 @@ body {
 .sash {
   position: absolute;
   inset: var(--reveal);
-  border: var(--sash) solid #e4dbca;
+  border: var(--sash) solid var(--paint-soft);
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.2),
     inset 0 1px 3px rgba(0, 0, 0, 0.25),
@@ -326,9 +352,13 @@ body {
 /* La escarcha se forma desde los bordes de cada cristal y se acumula mas abajo. */
 .frost {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 42% 58%;
+  grid-template-columns: var(--mullion-v1) 1fr;
+  grid-template-rows: var(--mullion-h1) 1fr;
   opacity: var(--frost, 0);
+}
+
+.frost__pane:nth-child(n + 5) {
+  display: none;
 }
 
 .frost__pane {
@@ -344,17 +374,37 @@ body {
 .mullion--vertical {
   top: calc(-1 * var(--sash));
   bottom: calc(-1 * var(--sash));
-  left: calc(50% - var(--mullion) / 2);
   width: var(--mullion);
-  background: linear-gradient(to right, #d6ccba, #f3ece1 35%, #e8dfcf 70%, #cfc3af);
+  background: linear-gradient(to right, var(--paint-shade), var(--paint-light) 35%, var(--paint-soft) 70%, var(--paint-deep));
+}
+
+.mullion--v1 {
+  left: calc(var(--mullion-v1) - var(--mullion) / 2);
+}
+
+.mullion--v2 {
+  left: calc(var(--mullion-v2) - var(--mullion) / 2);
+}
+
+.mullion--h1 {
+  top: calc(var(--mullion-h1) - var(--mullion) / 2);
+}
+
+.mullion--h2 {
+  top: calc(var(--mullion-h2) - var(--mullion) / 2);
+}
+
+/* El estilo clasico solo usa una cruz; el industrial usa la reticula completa. */
+.mullion--v2,
+.mullion--h2 {
+  display: none;
 }
 
 .mullion--horizontal {
   left: calc(-1 * var(--sash));
   right: calc(-1 * var(--sash));
-  top: calc(42% - var(--mullion) / 2);
   height: var(--mullion);
-  background: linear-gradient(to bottom, #f3ece1, #ebe3d5 40%, #d9cfbd 80%, #c9bda8);
+  background: linear-gradient(to bottom, var(--paint-light), var(--paint) 40%, var(--paint-shade) 80%, var(--paint-deep));
 }
 
 /* Caras laterales del parteluz: solo se ve la que mira hacia el observador. */
@@ -373,13 +423,13 @@ body {
 .mullion--vertical::before {
   right: 100%;
   width: max(0px, calc(var(--parallax-x) * -1 * var(--mullion-face)));
-  background: linear-gradient(to right, #b9ad97, #cdc1ac);
+  background: linear-gradient(to right, var(--paint-deep), var(--paint-shade));
 }
 
 .mullion--vertical::after {
   left: 100%;
   width: max(0px, calc(var(--parallax-x) * var(--mullion-face)));
-  background: linear-gradient(to left, #a99c85, #c4b8a2);
+  background: linear-gradient(to left, var(--paint-deeper), var(--paint-deep));
 }
 
 .mullion--horizontal::before,
@@ -391,13 +441,13 @@ body {
 .mullion--horizontal::before {
   bottom: 100%;
   height: max(0px, calc(var(--parallax-y) * -1 * var(--mullion-face)));
-  background: linear-gradient(to bottom, #f6f1e8, #e6ddcd);
+  background: linear-gradient(to bottom, var(--paint-light), var(--paint-soft));
 }
 
 .mullion--horizontal::after {
   top: 100%;
   height: max(0px, calc(var(--parallax-y) * var(--mullion-face)));
-  background: linear-gradient(to top, #a3967f, #bdb19b);
+  background: linear-gradient(to top, var(--paint-deeper), var(--paint-deep));
 }
 
 /*
@@ -413,7 +463,7 @@ body {
   border-bottom-width: max(0px, calc(var(--reveal) - var(--parallax-y) * var(--reveal-shift)));
   border-left-width: max(0px, calc(var(--reveal) + var(--parallax-x) * var(--reveal-shift)));
   border-right-width: max(0px, calc(var(--reveal) - var(--parallax-x) * var(--reveal-shift)));
-  border-color: var(--paint-deep) var(--paint-shade) #f1ebe0 #ddd3c2;
+  border-color: var(--paint-deep) var(--paint-shade) var(--paint-tint) var(--paint-soft);
   box-shadow:
     inset 0 0 6px rgba(0, 0, 0, 0.22),
     inset 0 3px 10px rgba(0, 0, 0, 0.16);
@@ -429,10 +479,10 @@ body {
   height: var(--casing-bottom);
   background: linear-gradient(
     to bottom,
-    #fbf7f0 0,
+    var(--paint-lighter) 0,
     var(--paint-light) 2px,
     var(--paint) 40%,
-    #ddd3c2 85%,
+    var(--paint-soft) 85%,
     var(--paint-shade) 100%
   );
   box-shadow:
@@ -440,11 +490,112 @@ body {
     0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
+/* Atenuacion global: una capa negra encima es mas barata que un filtro sobre la escena animada. */
+.dimmer {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  background: #000;
+  opacity: calc(1 - var(--brightness));
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+/* Colores del marco. */
+:root[data-frame-color="white"] {
+  --frame-base: #f1f0ec;
+}
+
+:root[data-frame-color="oak"] {
+  --frame-base: #b48a5a;
+}
+
+:root[data-frame-color="walnut"] {
+  --frame-base: #5e3d2b;
+}
+
+:root[data-frame-color="black"] {
+  --frame-base: #2b2c2f;
+}
+
+:root[data-frame-color="sage"] {
+  --frame-base: #a3b19b;
+}
+
+/* Estilo moderno: perfil fino de un solo cristal, sin molduras. */
+:root[data-frame-style="modern"] {
+  --casing: 8px;
+  --casing-bottom: 10px;
+  --reveal: 7px;
+  --reveal-shift: 4px;
+  --sash: 2px;
+}
+
+:root[data-frame-style="modern"] .casing::after,
+:root[data-frame-style="modern"] .mullion {
+  display: none;
+}
+
+:root[data-frame-style="modern"] .frost {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+:root[data-frame-style="modern"] .frost__pane:nth-child(n + 2) {
+  display: none;
+}
+
+/* Estilo industrial: perfiles delgados de acero y reticula de nueve cristales. */
+:root[data-frame-style="industrial"] {
+  --casing: 10px;
+  --casing-bottom: 12px;
+  --reveal: 9px;
+  --reveal-shift: 5px;
+  --sash: 3px;
+  --mullion: 3px;
+  --mullion-face: 2px;
+  --mullion-v1: 33.333%;
+  --mullion-v2: 66.667%;
+  --mullion-h1: 33.333%;
+  --mullion-h2: 66.667%;
+}
+
+:root[data-frame-style="industrial"] .mullion--v2,
+:root[data-frame-style="industrial"] .mullion--h2,
+:root[data-frame-style="industrial"] .frost__pane:nth-child(n + 5) {
+  display: block;
+}
+
+:root[data-frame-style="industrial"] .frost {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+/*
+ * Modo concentracion: oculta los detalles que podrian distraer (las escenas los marcan con
+ * .ambient-detail), elimina los relampagos y suaviza la precipitacion.
+ */
+:root[data-focus="true"] .ambient-detail,
+:root[data-focus="true"] .lightning {
+  display: none !important;
+}
+
+:root[data-focus="true"] .weather-overlay {
+  opacity: 0.6;
+}
+
 /* Ventana oculta o minimizada: se congelan todas las animaciones para no gastar bateria. */
 :root[data-paused="true"] *,
 :root[data-paused="true"] *::before,
 :root[data-paused="true"] *::after {
   animation-play-state: paused !important;
+}
+
+/* Reducir movimiento, desde la app o desde el sistema operativo. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

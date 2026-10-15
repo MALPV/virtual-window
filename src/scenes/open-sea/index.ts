@@ -7,6 +7,8 @@ import "./scene.css";
 // Limite de densidad de pixeles: el shader corre a pantalla completa en un widget siempre abierto.
 const MAX_PIXEL_RATIO = 1.5;
 const MAX_FPS = 30;
+// En modo concentracion el mar se mueve mas despacio.
+const FOCUS_TIME_SCALE = 0.6;
 
 const UNIFORMS = [
   "u_resolution",
@@ -88,6 +90,7 @@ export default defineScene({
     let resources: GlResources | null = createResources(gl);
     let world: WorldState = context.world;
     let elapsed = 0;
+    const timeScale = context.focus ? FOCUS_TIME_SCALE : 1;
 
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
@@ -127,7 +130,7 @@ export default defineScene({
 
     const loop = createFrameLoop(
       (_, delta) => {
-        elapsed += delta;
+        elapsed += delta * timeScale;
         draw();
       },
       { maxFps: MAX_FPS },

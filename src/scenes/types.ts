@@ -34,8 +34,10 @@ export interface SceneContext {
   onParallax(listener: (state: Readonly<ParallaxState>) => void): Unsubscribe;
   /** Maximum parallax shift in CSS pixels for a layer with depth 1. */
   readonly parallaxMaxPx: number;
-  /** True when the user asked the OS to reduce motion: avoid continuous animation. */
+  /** True when the user asked to reduce motion (in the app or the OS): avoid continuous animation. */
   readonly reducedMotion: boolean;
+  /** True in focus mode: show fewer details and keep motion gentle. */
+  readonly focus: boolean;
 }
 
 export interface SceneInstance {
@@ -44,6 +46,9 @@ export interface SceneInstance {
 }
 
 export interface SceneModule {
-  /** Render into `container`. Subscriptions made through `context` are released automatically. */
+  /**
+   * Render into `container`. Subscriptions made through `context` are released automatically.
+   * The scene is mounted again (with a crossfade) when `reducedMotion` or `focus` change.
+   */
   mount(container: HTMLElement, context: SceneContext): SceneInstance | void;
 }

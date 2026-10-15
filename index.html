@@ -1,5 +1,14 @@
 <!doctype html>
-<html lang="en" data-precipitation="none" data-storm="false" data-weather-overlay="on">
+<html
+  lang="en"
+  data-precipitation="none"
+  data-storm="false"
+  data-weather-overlay="on"
+  data-frame-style="classic"
+  data-frame-color="ivory"
+  data-focus="false"
+  data-motion="full"
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,7 +21,7 @@
     <div class="window" aria-hidden="true">
       <div class="casing">
         <div class="opening">
-          <div class="scene-host" id="scene-host"></div>
+          <div class="scene-stage" id="scene-stage"></div>
 
           <div class="weather-overlay">
             <div class="precipitation depth">
@@ -35,9 +44,16 @@
               <div class="frost__pane"></div>
               <div class="frost__pane"></div>
               <div class="frost__pane"></div>
+              <div class="frost__pane"></div>
+              <div class="frost__pane"></div>
+              <div class="frost__pane"></div>
+              <div class="frost__pane"></div>
+              <div class="frost__pane"></div>
             </div>
-            <div class="mullion mullion--vertical"></div>
-            <div class="mullion mullion--horizontal"></div>
+            <div class="mullion mullion--vertical mullion--v1"></div>
+            <div class="mullion mullion--vertical mullion--v2"></div>
+            <div class="mullion mullion--horizontal mullion--h1"></div>
+            <div class="mullion mullion--horizontal mullion--h2"></div>
           </div>
 
           <div class="reveal"></div>
@@ -45,6 +61,7 @@
 
         <div class="stool"></div>
       </div>
+      <div class="dimmer"></div>
     </div>
   </body>
 </html>

@@ -4,15 +4,22 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { applyWorldToCss } from "./engine/css-bridge";
 import { ParallaxTracker } from "./engine/parallax";
-import { loadSceneId, saveSceneId } from "./engine/preferences";
+import {
+  applySettingsToDom,
+  DEFAULT_SETTINGS,
+  effectiveReducedMotion,
+  isSettings,
+  type Settings,
+} from "./engine/settings";
 import { isEnvironmentSnapshot } from "./engine/world";
 import { WorldStore } from "./engine/world-store";
-import { DEFAULT_SCENE_ID, isValidSceneId, localizedSceneName, sceneRegistry } from "./scenes/registry";
+import { DEFAULT_SCENE_ID, localizedSceneName, sceneRegistry } from "./scenes/registry";
 import { SceneManager } from "./scenes/scene-manager";
 
 const ENVIRONMENT_EVENT = "environment-updated";
-const SCENE_SELECTED_EVENT = "scene-selected";
+const SETTINGS_CHANGED_EVENT = "settings-changed";
 const FALLBACK_PARALLAX_MAX_PX = 26;
+const FOCUS_PARALLAX_SCALE = 0.5;
 
 function requireElement(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -25,21 +32,32 @@ function readParallaxMax(root: HTMLElement): number {
   return Number.isFinite(value) ? value : FALLBACK_PARALLAX_MAX_PX;
 }
 
-async function selectScene(manager: SceneManager, id: string): Promise<boolean> {
-  const activated = await manager.activate(id);
-  if (activated) saveSceneId(id);
-  return activated;
+function parallaxScale(settings: Settings, reducedMotion: boolean): number {
+  if (reducedMotion) return 0;
+  return settings.focus ? FOCUS_PARALLAX_SCALE : 1;
 }
 
-async function activateInitialScene(manager: SceneManager): Promise<void> {
-  const saved = loadSceneId();
-  if (saved !== null && (await manager.activate(saved))) return;
+/** Shows the requested scene, falling back to the default one and then to any scene that works. */
+async function showScene(manager: SceneManager, requested: string | null): Promise<void> {
+  if (requested !== null && (await manager.activate(requested))) return;
+  if (manager.activeId !== null && manager.activeId !== requested) return;
   if (await manager.activate(DEFAULT_SCENE_ID)) return;
-  // Si la escena por defecto falla (p. ej. un fork sin ella), se usa la primera que funcione.
   for (const scene of sceneRegistry.scenes) {
     if (await manager.activate(scene.manifest.id)) return;
   }
   console.error("No scene could be mounted");
+}
+
+async function loadSettings(inTauri: boolean): Promise<Settings> {
+  if (!inTauri) return DEFAULT_SETTINGS;
+  try {
+    const settings = await invoke<unknown>("get_settings");
+    if (isSettings(settings)) return settings;
+    console.warn("Ignoring invalid settings from backend");
+  } catch (error) {
+    console.warn("Could not load settings:", error);
+  }
+  return DEFAULT_SETTINGS;
 }
 
 async function startEnvironment(store: WorldStore): Promise<void> {
@@ -52,7 +70,7 @@ async function startEnvironment(store: WorldStore): Promise<void> {
   if (isEnvironmentSnapshot(initial)) store.setLive(initial);
 }
 
-async function setupTauriInteractions(manager: SceneManager): Promise<void> {
+function setupTauriInteractions(manager: SceneManager): void {
   const appWindow = getCurrentWindow();
 
   window.addEventListener("mousedown", (event) => {
@@ -71,50 +89,63 @@ async function setupTauriInteractions(manager: SceneManager): Promise<void> {
       console.error("Failed to show context menu:", error),
     );
   });
-
-  await listen<unknown>(SCENE_SELECTED_EVENT, (event) => {
-    const id = (event.payload as { id?: unknown } | null)?.id;
-    if (isValidSceneId(id)) {
-      selectScene(manager, id).catch((error) => console.error("Failed to switch scene:", error));
-    }
-  });
 }
 
 async function main(): Promise<void> {
   const root = document.documentElement;
-  const host = requireElement("scene-host");
+  const stage = requireElement("scene-stage");
   const inTauri = isTauri();
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const systemReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   root.dataset.host = inTauri ? "tauri" : "browser";
 
   for (const error of sceneRegistry.errors) console.error("Invalid scene:", error);
 
+  let settings = await loadSettings(inTauri);
+  const reducedMotion = () => effectiveReducedMotion(settings, systemReducedMotion.matches);
+
   const store = new WorldStore();
-  applyWorldToCss(store.world, root, host);
-  store.subscribe((world) => applyWorldToCss(world, root, host));
-
-  document.addEventListener("visibilitychange", () => {
-    root.dataset.paused = String(document.hidden);
-  });
-
   const parallax = new ParallaxTracker(root);
   const manager = new SceneManager({
-    host,
+    stage,
     root,
     scenes: sceneRegistry.scenes,
     store,
     parallax,
     parallaxMaxPx: readParallaxMax(root),
-    reducedMotion,
+    preferences: { focus: settings.focus, reducedMotion: reducedMotion() },
   });
-  await activateInitialScene(manager);
+
+  applyWorldToCss(store.world, root, manager.hosts);
+  store.subscribe((world) => applyWorldToCss(world, root, manager.hosts));
+
+  const applySettings = async (next: Settings) => {
+    const sceneChanged = next.scene !== settings.scene;
+    settings = next;
+    applySettingsToDom(settings, root, reducedMotion());
+    parallax.setScale(parallaxScale(settings, reducedMotion()));
+    await manager.updatePreferences({ focus: settings.focus, reducedMotion: reducedMotion() });
+    if (sceneChanged) await showScene(manager, settings.scene);
+  };
+
+  applySettingsToDom(settings, root, reducedMotion());
+  parallax.setScale(parallaxScale(settings, reducedMotion()));
+  systemReducedMotion.addEventListener("change", () => {
+    applySettings(settings).catch((error) => console.error("Failed to apply motion preference:", error));
+  });
+  document.addEventListener("visibilitychange", () => {
+    root.dataset.paused = String(document.hidden);
+  });
+
+  await showScene(manager, settings.scene);
+  parallax.start().catch((error) => console.error("Failed to start parallax:", error));
 
   if (inTauri) {
-    await setupTauriInteractions(manager);
+    setupTauriInteractions(manager);
+    await listen<unknown>(SETTINGS_CHANGED_EVENT, (event) => {
+      if (!isSettings(event.payload)) return;
+      applySettings(event.payload).catch((error) => console.error("Failed to apply settings:", error));
+    });
     startEnvironment(store).catch((error) => console.warn("Environment updates unavailable:", error));
-  }
-  if (!reducedMotion) {
-    parallax.start().catch((error) => console.error("Failed to start parallax:", error));
   }
 
   if (import.meta.env.DEV) {
@@ -123,7 +154,12 @@ async function main(): Promise<void> {
       store,
       scenes: sceneRegistry.scenes,
       activeSceneId: () => manager.activeId,
-      selectScene: (id) => selectScene(manager, id),
+      // En la app el cambio pasa por Rust para guardarse; en el navegador se aplica directamente.
+      selectScene: inTauri
+        ? (id) => invoke("set_scene", { id }).then(() => undefined)
+        : (id) => applySettings({ ...settings, scene: id }),
+      settings: () => settings,
+      previewSettings: (patch) => applySettings({ ...settings, ...patch }),
       openByDefault: !inTauri,
       inTauri,
     });
