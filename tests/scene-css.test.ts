@@ -11,7 +11,9 @@ const SCENES_DIR = fileURLToPath(new URL("../src/scenes", import.meta.url));
 const sceneFolders = readdirSync(SCENES_DIR, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
-  .filter((folder) => existsSync(join(SCENES_DIR, folder, "manifest.json")));
+  .filter((folder) => existsSync(join(SCENES_DIR, folder, "manifest.json")))
+  // Las escenas que solo dibujan en un lienzo pueden no tener CSS.
+  .filter((folder) => cssFiles(folder).length > 0);
 
 function cssFiles(folder: string): string[] {
   return readdirSync(join(SCENES_DIR, folder))
