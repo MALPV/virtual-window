@@ -17,8 +17,17 @@
   width: 26px;
   height: 26px;
   will-change: transform;
-  animation: open-sea-sail calc(600s - var(--wind-strength, 0) * 360s) linear infinite;
+  animation: open-sea-sail 600s linear infinite;
   animation-delay: -140s;
+}
+
+/* Duracion por nivel de viento discreto para que la travesia en curso no salte. */
+[data-scene="open-sea"][data-wind-level="breeze"] .open-sea__boat {
+  animation-duration: 420s;
+}
+
+[data-scene="open-sea"][data-wind-level="strong"] .open-sea__boat {
+  animation-duration: 260s;
 }
 
 [data-scene="open-sea"][data-wind="left"] .open-sea__boat {

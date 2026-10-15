@@ -22,9 +22,18 @@
   --rooftops-cloud: color-mix(in oklab, var(--cloud-color, #ffffff) 60%, #ffe6f0);
   --rooftops-smoke: color-mix(in srgb, #e3e6ee var(--rooftops-day), #4a4f66);
   --rooftops-light: #ffd98a;
-  --rooftops-cloud-period: calc(360s - var(--wind-strength, 0) * 240s);
+  --rooftops-cloud-period: 360s;
   position: absolute;
   inset: 0;
+}
+
+/* Duraciones por nivel de viento discreto para que las animaciones en curso no salten. */
+[data-scene="rooftops"][data-wind-level="breeze"] .rooftops {
+  --rooftops-cloud-period: 260s;
+}
+
+[data-scene="rooftops"][data-wind-level="strong"] .rooftops {
+  --rooftops-cloud-period: 140s;
 }
 
 [data-scene="rooftops"] .depth-layer,

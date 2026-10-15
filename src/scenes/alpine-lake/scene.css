@@ -5,9 +5,21 @@
 [data-scene="alpine-lake"] .alpine-lake {
   /* Escala del viewBox (400x600, slice anclado abajo) resuelta en el contenedor de cada sprite. */
   --s: max(calc(100cqw / 400), calc(100cqh / 600));
-  --alpine-lake-cloud-period: calc(420s - var(--wind-strength, 0) * 300s);
+  --alpine-lake-cloud-period: 420s;
   position: absolute;
   inset: 0;
+}
+
+/*
+ * Las duraciones dependen del nivel de viento discreto, no de --wind-strength: cambiar la duracion
+ * de una animacion en curso la hace saltar, y --wind-strength varia de forma continua.
+ */
+[data-scene="alpine-lake"][data-wind-level="breeze"] .alpine-lake {
+  --alpine-lake-cloud-period: 300s;
+}
+
+[data-scene="alpine-lake"][data-wind-level="strong"] .alpine-lake {
+  --alpine-lake-cloud-period: 180s;
 }
 
 [data-scene="alpine-lake"] .depth-layer,

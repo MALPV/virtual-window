@@ -239,6 +239,7 @@ body {
   }
 }
 
+/* Destello tenue: una tormenta se nota sin que el relampago reclame la atencion. */
 .lightning {
   position: absolute;
   inset: 0;
@@ -258,13 +259,13 @@ body {
     opacity: 0;
   }
   89% {
-    opacity: 0.55;
+    opacity: 0.22;
   }
   90% {
-    opacity: 0.05;
+    opacity: 0.03;
   }
   91% {
-    opacity: 0.4;
+    opacity: 0.15;
   }
   93%,
   100% {
