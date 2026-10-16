@@ -1,0 +1,12 @@
+{
+  "id": "forest",
+  "name": {
+    "en": "Forest",
+    "es": "Bosque"
+  },
+  "author": "Marcos Valenzuela",
+  "license": "MIT OR Apache-2.0",
+  "apiVersion": 1,
+  "renderer": "webgl",
+  "weatherOverlay": true
+}
