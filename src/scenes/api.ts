@@ -23,7 +23,9 @@ export {
   type CachedPassOptions,
   type ShaderSceneOptions,
   type UniformWriter,
+  writeWorldUniforms,
 } from "./shader-scene";
+export { SHARED_GLSL } from "./shared";
 export type { SceneContext, SceneInstance, SceneManifest, SceneModule, Unsubscribe } from "./types";
 
 import type { SceneModule } from "./types";
