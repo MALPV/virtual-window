@@ -10,7 +10,7 @@ No text, no buttons, no setup. It works anywhere in the world, on macOS, Windows
 - **Real weather.** Clouds, overcast skies, fog, rain, snow, thunderstorms, raindrops on the glass and frost on the panes below 1 °C. Rain, clouds and trees follow the wind.
 - **Alive.** Waves, drifting clouds and their shadows on the land, rippling reflections, mist over the lake at dawn, surf on the cliffs, city lights at dusk.
 - **Depth.** An architectural frame with an inner bevel, mullions and a reflective pane. The cursor stands in for your head: far things shift more than near ones.
-- **Scenes.** Pick a view from the right-click menu: Open sea, Mountains, Coast, Alpine lake and City, all rendered in real time in 3D with physically based light. Anyone can add a new one.
+- **Scenes.** Pick a view from the right-click menu: Open sea, Mountains, Coast, Alpine lake, Forest, Dunes and City, all rendered in real time in 3D with physically based light. Anyone can add a new one.
 - **Real glass.** Raindrops bead and slide down the pane, inverting the view like tiny lenses, while the landscape behind goes slightly out of focus. Switching crossfades, and weather changes blend in over a minute and a half: nothing ever jumps.
 - **Your window.** Classic, modern or industrial frame in six colors, adjustable brightness, focus mode with fewer stimuli, reduce motion, and always on top. It remembers where you left it and at what size, so it can live next to your editor or browser.
 - **Light.** Built with Tauri: a native window, a few MB, animations on the GPU, paused when hidden.
