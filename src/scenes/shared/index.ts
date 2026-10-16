@@ -3,6 +3,7 @@ import cache from "./cache.glsl?raw";
 import noise from "./noise.glsl?raw";
 import ocean from "./ocean.glsl?raw";
 import sky from "./sky.glsl?raw";
+import terrain from "./terrain.glsl?raw";
 import uniforms from "./uniforms.glsl?raw";
 import windowOptics from "./window.glsl?raw";
 
@@ -18,4 +19,5 @@ export const SHARED_GLSL: Readonly<Record<string, string>> = {
   "sky.glsl": sky,
   "cache.glsl": cache,
   "ocean.glsl": ocean,
+  "terrain.glsl": terrain,
 };
