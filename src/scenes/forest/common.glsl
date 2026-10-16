@@ -34,12 +34,14 @@ float canopy_height(vec2 p) {
   vec2 cell = floor(p / TREE_CELL);
   vec2 jitter = (vec2(hash12(cell), hash12(cell + 7.0)) - 0.5) * TREE_CELL * 0.35;
   vec2 d = p - (cell + 0.5) * TREE_CELL - jitter;
-  float radius = TREE_CELL * (0.42 + 0.12 * hash12(cell + 3.0));
+  float radius = TREE_CELL * (0.5 + 0.12 * hash12(cell + 3.0));
   float tall = 14.0 + 10.0 * hash12(cell + 5.0);
-  float q = 1.0 - dot(d, d) / (radius * radius);
-  // Copa irregular: ramas y masas de follaje sobre la forma redondeada.
-  float crown = q > 0.0 ? 0.55 + 0.45 * sqrt(q) : 0.45;
-  crown += (noise(p * 0.9 + hash12(cell) * 10.0) - 0.5) * 0.22 + (noise(p * 2.3) - 0.5) * 0.08;
+  // Copa ancha y redondeada (frondosa): una cupula aplanada en vez de un cono.
+  float q = clamp(1.0 - dot(d, d) / (radius * radius), 0.0, 1.0);
+  float crown = 0.62 + 0.38 * pow(q, 0.35);
+  // Masas de follaje: varios lobulos por copa, mas pequenos hacia el borde.
+  float lobes = noise(p * 0.75 + hash12(cell) * 10.0) * 0.6 + noise(p * 1.7 + 4.0) * 0.4;
+  crown += (lobes - 0.5) * 0.16 * (0.4 + 0.6 * q);
   return tall * crown * smoothstep(30.0, 38.0, near);
 }
 
