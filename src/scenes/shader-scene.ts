@@ -9,6 +9,12 @@ const DEFAULT_MAX_PIXEL_RATIO = 1.5;
 const DEFAULT_MAX_FPS = 30;
 const DEFAULT_FOCUS_TIME_SCALE = 0.6;
 const DEFAULT_MOVING_SCALE = 0.75;
+// Resolucion adaptativa: si el equipo no sostiene la escena, se baja la densidad del lienzo por pasos.
+const ADAPT_WINDOW_MS = 3000;
+const SLOW_FRAME_FACTOR = 1.6;
+const FAST_FRAME_FACTOR = 1.15;
+const QUALITY_STEP = 0.85;
+const MIN_QUALITY = 0.5;
 /** Time without parallax changes after which the cached pass is refined at full resolution. */
 const PARALLAX_SETTLE_MS = 200;
 const INCLUDE_PATTERN = /^[ \t]*#include[ \t]+"([^"]+)"[ \t]*$/gm;
@@ -212,6 +218,12 @@ export function shaderScene(options: ShaderSceneOptions): SceneModule {
       let cachedDirty = true;
       let refinePending = false;
       let lastParallaxChange = Number.NEGATIVE_INFINITY;
+      // Factor de calidad (1 = maxPixelRatio). Baja si los fotogramas tardan demasiado y sube con margen.
+      let quality = 1;
+      let windowStart = 0;
+      let windowFrames = 0;
+      let windowTime = 0;
+      const targetInterval = 1000 / (options.maxFps ?? DEFAULT_MAX_FPS);
       const timeScale = context.focus ? (options.focusTimeScale ?? DEFAULT_FOCUS_TIME_SCALE) : 1;
 
       const writeCommonUniforms = (pass: Pass, width: number, height: number) => {
@@ -222,7 +234,7 @@ export function shaderScene(options: ShaderSceneOptions): SceneModule {
       };
 
       const resizeCanvas = () => {
-        const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio);
+        const ratio = Math.min(window.devicePixelRatio || 1, maxPixelRatio) * quality;
         const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
         const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
         if (canvas.width !== width || canvas.height !== height) {
@@ -289,9 +301,28 @@ export function shaderScene(options: ShaderSceneOptions): SceneModule {
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       };
 
+      const adaptQuality = (time: number, delta: number) => {
+        if (windowStart === 0) windowStart = time;
+        windowFrames += 1;
+        windowTime += delta;
+        if (time - windowStart < ADAPT_WINDOW_MS) return;
+        const average = windowTime / windowFrames;
+        if (average > targetInterval * SLOW_FRAME_FACTOR && quality > MIN_QUALITY) {
+          quality = Math.max(MIN_QUALITY, quality * QUALITY_STEP);
+          cachedDirty = true;
+        } else if (average < targetInterval * FAST_FRAME_FACTOR && quality < 1) {
+          quality = Math.min(1, quality / QUALITY_STEP);
+          cachedDirty = true;
+        }
+        windowStart = time;
+        windowFrames = 0;
+        windowTime = 0;
+      };
+
       const loop = createFrameLoop(
-        (_, delta) => {
+        (time, delta) => {
           elapsed += delta * timeScale;
+          adaptQuality(time, delta);
           draw();
         },
         { maxFps: options.maxFps ?? DEFAULT_MAX_FPS },
