@@ -22,14 +22,20 @@ function shaderFiles(dir: string): string[] {
   });
 }
 
-// Los fragmentos .glsl de la misma carpeta se pueden incluir con #include "nombre.glsl".
-function siblingChunks(file: string): Record<string, string> {
-  const dir = dirname(file);
+function chunksIn(dir: string): Record<string, string> {
+  if (!existsSync(dir)) return {};
   return Object.fromEntries(
     readdirSync(dir)
       .filter((name) => extname(name) === ".glsl")
       .map((name) => [basename(name), readFileSync(join(dir, name), "utf8")]),
   );
+}
+
+// Se pueden incluir los fragmentos compartidos (src/scenes/shared) y los .glsl de la misma carpeta.
+const SHARED_CHUNKS = chunksIn(fileURLToPath(new URL("../src/scenes/shared", import.meta.url)));
+
+function siblingChunks(file: string): Record<string, string> {
+  return { ...SHARED_CHUNKS, ...chunksIn(dirname(file)) };
 }
 
 // Palabras reservadas de GLSL ES 3.0 que el analizador acepta pero los drivers rechazan al compilar.
