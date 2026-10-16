@@ -30,6 +30,10 @@ export interface WeatherReport {
 export interface EnvironmentSnapshot {
   sunElevation: number;
   sunTrack: number;
+  moonElevation: number;
+  moonTrack: number;
+  moonIllumination: number;
+  moonWaxing: boolean;
   locationKnown: boolean;
   weather: WeatherReport | null;
 }
@@ -67,6 +71,15 @@ export interface WorldState {
   daylight: number;
   /** 0..1, peaks while the sun is just above the horizon (warm, low light). */
   goldenHour: number;
+  /** Degrees above the horizon (negative below). */
+  moonAltitude: number;
+  /** Horizontal moon position in the window, 0 (left) to 1 (right). */
+  moonX: number;
+  /** Illuminated fraction of the disc, 0 (new) to 1 (full). */
+  moonIllumination: number;
+  moonWaxing: boolean;
+  /** 0..1: how much the moon lights the night (phase, altitude, daylight and clouds). */
+  moonlight: number;
   dayPhase: DayPhase;
   condition: Condition;
   /** 0..1 */
@@ -97,6 +110,10 @@ export interface WorldState {
 export const DEFAULT_SNAPSHOT: EnvironmentSnapshot = {
   sunElevation: 12,
   sunTrack: 0.72,
+  moonElevation: -20,
+  moonTrack: 0.5,
+  moonIllumination: 0.5,
+  moonWaxing: true,
   locationKnown: false,
   weather: null,
 };
@@ -128,6 +145,10 @@ export function isEnvironmentSnapshot(value: unknown): value is EnvironmentSnaps
   return (
     isFiniteNumber(s.sunElevation) &&
     isFiniteNumber(s.sunTrack) &&
+    isFiniteNumber(s.moonElevation) &&
+    isFiniteNumber(s.moonTrack) &&
+    isFiniteNumber(s.moonIllumination) &&
+    typeof s.moonWaxing === "boolean" &&
     typeof s.locationKnown === "boolean" &&
     (s.weather === null || isWeatherReport(s.weather))
   );
@@ -285,8 +306,14 @@ export function deriveWorld(snapshot: EnvironmentSnapshot): WorldState {
   const windStrength = clamp(weather?.windStrength ?? 0, 0, 1);
   const temperature = weather?.temperature ?? null;
 
-  const [skyTop, skyMiddle, skyHorizon, skyBottom] = skyStops(elevation).map((color) =>
-    mixRgb(color, grayOf(color), deck * 0.6),
+  // La luna llena ilumina la noche: mas brillo cuanto mayor la fase y mas alta, sin sol y sin nubes.
+  const moonIllumination = clamp(snapshot.moonIllumination, 0, 1);
+  const moonlight =
+    Math.pow(moonIllumination, 1.5) * smoothstep(-1, 10, snapshot.moonElevation) * (1 - daylight) * (1 - deck * 0.7);
+  const moonlit = [hexToRgb("#1a2747"), hexToRgb("#25365e"), hexToRgb("#3a4a72"), hexToRgb("#3f4d70")] as const;
+
+  const [skyTop, skyMiddle, skyHorizon, skyBottom] = skyStops(elevation).map((color, index) =>
+    mixRgb(mixRgb(color, moonlit[index], moonlight * 0.55), grayOf(color), deck * 0.6),
   );
   const deckDay = storm ? hexToRgb("#5f6670") : hexToRgb("#a9b0b8");
 
@@ -295,6 +322,11 @@ export function deriveWorld(snapshot: EnvironmentSnapshot): WorldState {
     sunX: clamp(snapshot.sunTrack, 0, 1),
     daylight,
     goldenHour: goldenHourOf(elevation),
+    moonAltitude: snapshot.moonElevation,
+    moonX: clamp(snapshot.moonTrack, 0, 1),
+    moonIllumination,
+    moonWaxing: snapshot.moonWaxing,
+    moonlight,
     dayPhase: dayPhaseOf(elevation),
     condition: weather?.condition ?? "clear",
     cloudCover,
@@ -321,9 +353,9 @@ export function deriveWorld(snapshot: EnvironmentSnapshot): WorldState {
       cloudDeck: mixRgb(hexToRgb("#161a24"), deckDay, daylight),
       fog: mixRgb(hexToRgb("#2b3242"), hexToRgb("#dfe3e8"), daylight),
       sunVisibility: smoothstep(-8, 0, elevation) * (1 - deck * 0.9) * (1 - 0.4 * cloudCover),
-      starsVisibility: (1 - smoothstep(-14, -6, elevation)) * (1 - Math.max(deck, cloudCover * 0.8)),
+      starsVisibility: (1 - smoothstep(-14, -6, elevation)) * (1 - Math.max(deck, cloudCover * 0.8)) * (1 - 0.55 * moonlight),
       cloudDeckOpacity: deck,
-      landBrightness: (0.25 + 0.75 * daylight) * (1 - 0.3 * deck),
+      landBrightness: (0.25 + 0.75 * daylight + 0.15 * moonlight) * (1 - 0.3 * deck),
       landSaturation: (0.55 + 0.45 * daylight) * (1 - 0.3 * deck),
       // La escarcha empieza a aparecer bajo 1 grado y es plena a -8.
       frost: temperature === null ? 0 : clamp((1 - temperature) / 9, 0, 1),

@@ -93,6 +93,11 @@ export function writeWorldUniforms(u: UniformWriter, world: WorldState): void {
   u.color("u_fog_color", palette.fog);
   u.float("u_daylight", world.daylight);
   u.float("u_golden_hour", world.goldenHour);
+  u.float("u_moon_altitude", world.moonAltitude);
+  u.float("u_moon_x", world.moonX);
+  u.float("u_moon_illumination", world.moonIllumination);
+  u.float("u_moon_waxing", world.moonWaxing ? 1 : 0);
+  u.float("u_moonlight", world.moonlight);
   u.float("u_stars", palette.starsVisibility);
   u.float("u_cloud_cover", world.cloudCover);
   u.float("u_cloud_deck", palette.cloudDeckOpacity);

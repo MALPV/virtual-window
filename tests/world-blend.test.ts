@@ -17,6 +17,10 @@ const weather = (overrides: Partial<WeatherReport> = {}): WeatherReport => ({
 const snapshot = (overrides: Partial<EnvironmentSnapshot> = {}): EnvironmentSnapshot => ({
   sunElevation: 30,
   sunTrack: 0.5,
+  moonElevation: -20,
+  moonTrack: 0.5,
+  moonIllumination: 0.5,
+  moonWaxing: true,
   locationKnown: true,
   weather: weather(),
   ...overrides,

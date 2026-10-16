@@ -24,6 +24,10 @@ export interface SimulatorOptions {
 interface SimulatorValues {
   sunElevation: number;
   sunTrack: number;
+  moonElevation: number;
+  moonTrack: number;
+  /** Illuminated fraction, 0 (new) to 1 (full); the simulator assumes a waxing moon. */
+  moonIllumination: number;
   condition: Condition;
   intensity: number;
   cloudCover: number;
@@ -35,7 +39,17 @@ interface SimulatorValues {
 const PRESETS: Record<string, Partial<SimulatorValues>> = {
   "Clear noon": { sunElevation: 60, sunTrack: 0.5, condition: "clear", cloudCover: 0.1, temperature: 24 },
   "Golden hour": { sunElevation: 4, sunTrack: 0.85, condition: "cloudy", cloudCover: 0.4, temperature: 18 },
-  "Warm night": { sunElevation: -25, sunTrack: 0.5, condition: "clear", cloudCover: 0.05, temperature: 18 },
+  "Warm night": { sunElevation: -25, sunTrack: 0.5, condition: "clear", cloudCover: 0.05, temperature: 18, moonElevation: -10 },
+  "Full moon": {
+    sunElevation: -30,
+    sunTrack: 0.5,
+    condition: "clear",
+    cloudCover: 0.15,
+    temperature: 12,
+    moonElevation: 32,
+    moonTrack: 0.32,
+    moonIllumination: 1,
+  },
   "Windy overcast": { sunElevation: 30, condition: "overcast", cloudCover: 1, windStrength: 0.9, windDrift: -0.8 },
   "Heavy rain": { sunElevation: 20, condition: "rain", intensity: 0.9, cloudCover: 1, windStrength: 0.5, windDrift: 0.4 },
   Storm: { sunElevation: 10, condition: "storm", intensity: 1, cloudCover: 1, windStrength: 0.8, windDrift: 0.7 },
@@ -57,6 +71,10 @@ function toSnapshot(values: SimulatorValues): EnvironmentSnapshot {
   return {
     sunElevation: values.sunElevation,
     sunTrack: values.sunTrack,
+    moonElevation: values.moonElevation,
+    moonTrack: values.moonTrack,
+    moonIllumination: values.moonIllumination,
+    moonWaxing: true,
     locationKnown: true,
     weather: {
       condition: values.condition,
@@ -74,6 +92,9 @@ function fromSnapshot(snapshot: EnvironmentSnapshot): SimulatorValues {
   return {
     sunElevation: snapshot.sunElevation,
     sunTrack: snapshot.sunTrack,
+    moonElevation: snapshot.moonElevation,
+    moonTrack: snapshot.moonTrack,
+    moonIllumination: snapshot.moonIllumination,
     condition: weather?.condition ?? "clear",
     intensity: weather?.intensity ?? 0.5,
     cloudCover: weather?.cloudCover ?? 0.3,
@@ -164,6 +185,9 @@ export function mountSimulator(options: SimulatorOptions): void {
   };
   addSlider("sunElevation", "Sun altitude", -30, 90, 0.5);
   addSlider("sunTrack", "Sun x", 0, 1, 0.01);
+  addSlider("moonElevation", "Moon altitude", -30, 90, 0.5);
+  addSlider("moonTrack", "Moon x", 0, 1, 0.01);
+  addSlider("moonIllumination", "Moon phase", 0, 1, 0.01);
   addSlider("intensity", "Intensity", 0, 1, 0.01);
   addSlider("cloudCover", "Cloud cover", 0, 1, 0.01);
   addSlider("temperature", "Temperature", -15, 35, 0.5);

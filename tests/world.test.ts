@@ -22,6 +22,10 @@ const weather = (overrides: Partial<WeatherReport> = {}): WeatherReport => ({
 const snapshot = (overrides: Partial<EnvironmentSnapshot> = {}): EnvironmentSnapshot => ({
   sunElevation: 30,
   sunTrack: 0.5,
+  moonElevation: -20,
+  moonTrack: 0.5,
+  moonIllumination: 0.5,
+  moonWaxing: true,
   locationKnown: true,
   weather: weather(),
   ...overrides,
@@ -38,6 +42,8 @@ describe("isEnvironmentSnapshot", () => {
     expect(isEnvironmentSnapshot({ ...snapshot(), sunElevation: Number.NaN })).toBe(false);
     expect(isEnvironmentSnapshot({ ...snapshot(), weather: { ...weather(), condition: "hail" } })).toBe(false);
     expect(isEnvironmentSnapshot({ ...snapshot(), weather: { ...weather(), windStrength: undefined } })).toBe(false);
+    expect(isEnvironmentSnapshot({ ...snapshot(), moonWaxing: "yes" })).toBe(false);
+    expect(isEnvironmentSnapshot({ ...snapshot(), moonIllumination: Number.NaN })).toBe(false);
   });
 });
 
@@ -52,6 +58,23 @@ describe("deriveWorld", () => {
     expect(deriveWorld(snapshot({ sunElevation: -20 })).goldenHour).toBe(0);
     expect(deriveWorld(snapshot({ sunElevation: 3 })).goldenHour).toBeCloseTo(1);
     expect(deriveWorld(snapshot({ sunElevation: 40 })).goldenHour).toBe(0);
+  });
+
+  it("lights the night with a high full moon and dims the stars", () => {
+    const dark = deriveWorld(snapshot({ sunElevation: -30, weather: weather({ cloudCover: 0 }) }));
+    const moonlit = deriveWorld(
+      snapshot({ sunElevation: -30, moonElevation: 40, moonIllumination: 1, weather: weather({ cloudCover: 0 }) }),
+    );
+    expect(dark.moonlight).toBe(0);
+    expect(moonlit.moonlight).toBeCloseTo(1);
+    expect(moonlit.palette.starsVisibility).toBeLessThan(dark.palette.starsVisibility);
+    expect(moonlit.palette.skyTop[2]).toBeGreaterThan(dark.palette.skyTop[2]);
+  });
+
+  it("gives no moonlight with a new moon, a moon below the horizon or in daylight", () => {
+    expect(deriveWorld(snapshot({ sunElevation: -30, moonElevation: 40, moonIllumination: 0 })).moonlight).toBe(0);
+    expect(deriveWorld(snapshot({ sunElevation: -30, moonElevation: -5, moonIllumination: 1 })).moonlight).toBe(0);
+    expect(deriveWorld(snapshot({ sunElevation: 40, moonElevation: 40, moonIllumination: 1 })).moonlight).toBe(0);
   });
 
   it("shows stars only on clear nights", () => {

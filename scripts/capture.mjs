@@ -27,23 +27,38 @@ const weather = (overrides) => ({
   ...overrides,
 });
 
+const NO_MOON = { moonElevation: -20, moonTrack: 0.5, moonIllumination: 0.5, moonWaxing: true };
+
 const PRESETS = {
-  noon: { sunElevation: 58, sunTrack: 0.55, locationKnown: true, weather: weather({ cloudCover: 0.25 }) },
-  golden: { sunElevation: 4, sunTrack: 0.82, locationKnown: true, weather: weather({ condition: "cloudy", cloudCover: 0.4 }) },
-  night: { sunElevation: -26, sunTrack: 0.5, locationKnown: true, weather: weather({ cloudCover: 0.05 }) },
+  moon: {
+    sunElevation: -30,
+    sunTrack: 0.5,
+    moonElevation: 32,
+    moonTrack: 0.32,
+    moonIllumination: 1,
+    moonWaxing: true,
+    locationKnown: true,
+    weather: weather({ cloudCover: 0.15, temperature: 12 }),
+  },
+  noon: { ...NO_MOON, sunElevation: 58, sunTrack: 0.55, locationKnown: true, weather: weather({ cloudCover: 0.25 }) },
+  golden: { ...NO_MOON, sunElevation: 4, sunTrack: 0.82, locationKnown: true, weather: weather({ condition: "cloudy", cloudCover: 0.4 }) },
+  night: { ...NO_MOON, sunElevation: -26, sunTrack: 0.5, locationKnown: true, weather: weather({ cloudCover: 0.05 }) },
   rain: {
+    ...NO_MOON,
     sunElevation: 25,
     sunTrack: 0.4,
     locationKnown: true,
     weather: weather({ condition: "rain", intensity: 0.8, cloudCover: 1, windDrift: 0.5, windStrength: 0.5, temperature: 11 }),
   },
   snow: {
+    ...NO_MOON,
     sunElevation: 15,
     sunTrack: 0.35,
     locationKnown: true,
     weather: weather({ condition: "snow", intensity: 0.6, cloudCover: 1, temperature: -4 }),
   },
   fog: {
+    ...NO_MOON,
     sunElevation: 8,
     sunTrack: 0.6,
     locationKnown: true,

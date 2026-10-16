@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { WORLD_CSS_VARIABLES, worldCssValues, worldDataAttributes } from "../src/engine/css-bridge";
 import { deriveWorld } from "../src/engine/world";
 
+const NO_MOON = { moonElevation: -20, moonTrack: 0.5, moonIllumination: 0.5, moonWaxing: true };
+
 const world = deriveWorld({
+  ...NO_MOON,
   sunElevation: 20,
   sunTrack: 0.3,
   locationKnown: true,
@@ -24,7 +27,7 @@ describe("worldCssValues", () => {
   });
 
   it("leaves the temperature unset when unknown", () => {
-    const unknown = deriveWorld({ sunElevation: 20, sunTrack: 0.5, locationKnown: false, weather: null });
+    const unknown = deriveWorld({ ...NO_MOON, sunElevation: 20, sunTrack: 0.5, locationKnown: false, weather: null });
     expect(worldCssValues(unknown)["--temperature"]).toBeUndefined();
   });
 });
