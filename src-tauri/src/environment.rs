@@ -24,6 +24,12 @@ pub struct EnvironmentSnapshot {
     pub sun_elevation: f64,
     /// Horizontal sun position in the window, from 0 (left) to 1 (right).
     pub sun_track: f64,
+    pub moon_elevation: f64,
+    /// Horizontal moon position in the window, from 0 (left) to 1 (right).
+    pub moon_track: f64,
+    /// Illuminated fraction of the moon, from 0 (new) to 1 (full).
+    pub moon_illumination: f64,
+    pub moon_waxing: bool,
     /// False when the sky is approximated from the system time zone because no location is known.
     pub location_known: bool,
     pub weather: Option<Weather>,
@@ -68,9 +74,15 @@ fn build_snapshot(
     unix_seconds: f64,
 ) -> EnvironmentSnapshot {
     let sun = solar::sun_position(coordinates.latitude, coordinates.longitude, unix_seconds);
+    let moon = solar::moon_position(coordinates.latitude, coordinates.longitude, unix_seconds);
     EnvironmentSnapshot {
         sun_elevation: sun.elevation,
         sun_track: solar::sun_track(sun.azimuth, coordinates.latitude),
+        // La Luna usa la misma proyeccion sobre la ventana que el Sol.
+        moon_elevation: moon.elevation,
+        moon_track: solar::sun_track(moon.azimuth, coordinates.latitude),
+        moon_illumination: moon.illumination,
+        moon_waxing: moon.waxing,
         location_known,
         weather,
     }
@@ -273,6 +285,10 @@ mod tests {
         let snapshot = EnvironmentSnapshot {
             sun_elevation: 10.0,
             sun_track: 0.3,
+            moon_elevation: 20.0,
+            moon_track: 0.6,
+            moon_illumination: 0.8,
+            moon_waxing: true,
             location_known: false,
             weather: None,
         };
@@ -280,6 +296,8 @@ mod tests {
         assert_eq!(json["sunElevation"], 10.0);
         assert_eq!(json["sunTrack"], 0.3);
         assert_eq!(json["locationKnown"], false);
+        assert_eq!(json["moonIllumination"], 0.8);
+        assert_eq!(json["moonWaxing"], true);
         assert!(json["weather"].is_null());
     }
 }

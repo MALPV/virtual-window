@@ -1,4 +1,4 @@
-//! Low-precision solar position (accurate to roughly half a degree), enough to drive the sky.
+//! Low-precision solar and lunar positions (accurate to roughly half a degree), enough to drive the sky.
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SunPosition {
@@ -8,40 +8,161 @@ pub struct SunPosition {
     pub azimuth: f64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct MoonPosition {
+    /// Degrees above the horizon (negative below), corrected for parallax.
+    pub elevation: f64,
+    /// Degrees clockwise from true north.
+    pub azimuth: f64,
+    /// Illuminated fraction of the disc, from 0 (new) to 1 (full).
+    pub illumination: f64,
+    /// True between new and full moon.
+    pub waxing: bool,
+}
+
 const UNIX_EPOCH_JULIAN_DAY: f64 = 2_440_587.5;
 const J2000_JULIAN_DAY: f64 = 2_451_545.0;
 const SECONDS_PER_DAY: f64 = 86_400.0;
 
-pub fn sun_position(latitude: f64, longitude: f64, unix_seconds: f64) -> SunPosition {
-    let days = unix_seconds / SECONDS_PER_DAY + UNIX_EPOCH_JULIAN_DAY - J2000_JULIAN_DAY;
+fn days_since_j2000(unix_seconds: f64) -> f64 {
+    unix_seconds / SECONDS_PER_DAY + UNIX_EPOCH_JULIAN_DAY - J2000_JULIAN_DAY
+}
 
+fn obliquity(days: f64) -> f64 {
+    (23.439 - 0.000_000_4 * days).to_radians()
+}
+
+/// Apparent ecliptic longitude of the sun, in radians.
+fn sun_ecliptic_longitude(days: f64) -> f64 {
     let mean_longitude = (280.460 + 0.985_647_4 * days).rem_euclid(360.0);
     let mean_anomaly = (357.528 + 0.985_600_3 * days)
         .rem_euclid(360.0)
         .to_radians();
-    let ecliptic_longitude =
-        (mean_longitude + 1.915 * mean_anomaly.sin() + 0.020 * (2.0 * mean_anomaly).sin())
-            .to_radians();
-    let obliquity = (23.439 - 0.000_000_4 * days).to_radians();
+    (mean_longitude + 1.915 * mean_anomaly.sin() + 0.020 * (2.0 * mean_anomaly).sin()).to_radians()
+}
 
-    let right_ascension =
-        (obliquity.cos() * ecliptic_longitude.sin()).atan2(ecliptic_longitude.cos());
-    let declination = (obliquity.sin() * ecliptic_longitude.sin()).asin();
-
+/// Converts equatorial coordinates (radians) to elevation and azimuth (degrees) for an observer.
+fn to_horizontal(
+    latitude: f64,
+    longitude: f64,
+    days: f64,
+    right_ascension: f64,
+    declination: f64,
+) -> (f64, f64) {
     let sidereal_degrees =
         (280.460_618_37 + 360.985_647_366_29 * days + longitude).rem_euclid(360.0);
     let hour_angle =
         (sidereal_degrees.to_radians() - right_ascension).rem_euclid(std::f64::consts::TAU);
-
     let lat = latitude.to_radians();
     let elevation =
         (lat.sin() * declination.sin() + lat.cos() * declination.cos() * hour_angle.cos()).asin();
     let azimuth =
         (-hour_angle.sin()).atan2(lat.cos() * declination.tan() - lat.sin() * hour_angle.cos());
+    (
+        elevation.to_degrees(),
+        azimuth.to_degrees().rem_euclid(360.0),
+    )
+}
 
-    SunPosition {
-        elevation: elevation.to_degrees(),
-        azimuth: azimuth.to_degrees().rem_euclid(360.0),
+/// Ecliptic longitude and latitude (radians) to right ascension and declination (radians).
+fn ecliptic_to_equatorial(longitude: f64, latitude: f64, days: f64) -> (f64, f64) {
+    let epsilon = obliquity(days);
+    let x = longitude.cos() * latitude.cos();
+    let y = longitude.sin() * latitude.cos();
+    let z = latitude.sin();
+    let ye = y * epsilon.cos() - z * epsilon.sin();
+    let ze = y * epsilon.sin() + z * epsilon.cos();
+    (ye.atan2(x), ze.atan2((x * x + ye * ye).sqrt()))
+}
+
+pub fn sun_position(latitude: f64, longitude: f64, unix_seconds: f64) -> SunPosition {
+    let days = days_since_j2000(unix_seconds);
+    let (right_ascension, declination) =
+        ecliptic_to_equatorial(sun_ecliptic_longitude(days), 0.0, days);
+    let (elevation, azimuth) =
+        to_horizontal(latitude, longitude, days, right_ascension, declination);
+    SunPosition { elevation, azimuth }
+}
+
+/// Geocentric ecliptic longitude, latitude (radians) and distance (Earth radii) of the moon,
+/// from its mean orbital elements plus the largest periodic perturbations.
+fn moon_ecliptic(days: f64) -> (f64, f64, f64) {
+    // Elementos referidos al 31 de diciembre de 1999 a las 0:00 UT, 1,5 dias antes de J2000.
+    let d = days + 1.5;
+    let node = (125.1228 - 0.052_953_808_3 * d).to_radians();
+    let inclination = 5.1454_f64.to_radians();
+    let perigee = (318.0634 + 0.164_357_322_3 * d).to_radians();
+    let semi_major_axis = 60.2666;
+    let eccentricity = 0.054_900;
+    let mean_anomaly = (115.3654 + 13.064_992_950_9 * d)
+        .rem_euclid(360.0)
+        .to_radians();
+
+    let mut eccentric = mean_anomaly
+        + eccentricity * mean_anomaly.sin() * (1.0 + eccentricity * mean_anomaly.cos());
+    for _ in 0..5 {
+        eccentric -= (eccentric - eccentricity * eccentric.sin() - mean_anomaly)
+            / (1.0 - eccentricity * eccentric.cos());
+    }
+    let xv = semi_major_axis * (eccentric.cos() - eccentricity);
+    let yv = semi_major_axis * (1.0 - eccentricity * eccentricity).sqrt() * eccentric.sin();
+    let true_anomaly = yv.atan2(xv);
+    let distance = (xv * xv + yv * yv).sqrt();
+
+    let argument = true_anomaly + perigee;
+    let xh =
+        distance * (node.cos() * argument.cos() - node.sin() * argument.sin() * inclination.cos());
+    let yh =
+        distance * (node.sin() * argument.cos() + node.cos() * argument.sin() * inclination.cos());
+    let zh = distance * argument.sin() * inclination.sin();
+    let mut longitude = yh.atan2(xh).to_degrees();
+    let mut latitude = zh.atan2((xh * xh + yh * yh).sqrt()).to_degrees();
+
+    let sun_anomaly = (356.0470 + 0.985_600_258_5 * d)
+        .rem_euclid(360.0)
+        .to_radians();
+    let sun_longitude = (282.9404 + 4.709_35e-5 * d).to_radians() + sun_anomaly;
+    let moon_longitude = node + perigee + mean_anomaly;
+    let elongation = moon_longitude - sun_longitude;
+    let latitude_argument = moon_longitude - node;
+    let m = mean_anomaly;
+    longitude += -1.274 * (m - 2.0 * elongation).sin() + 0.658 * (2.0 * elongation).sin()
+        - 0.186 * sun_anomaly.sin()
+        - 0.059 * (2.0 * m - 2.0 * elongation).sin()
+        - 0.057 * (m - 2.0 * elongation + sun_anomaly).sin()
+        + 0.053 * (m + 2.0 * elongation).sin()
+        + 0.046 * (2.0 * elongation - sun_anomaly).sin()
+        + 0.041 * (m - sun_anomaly).sin()
+        - 0.035 * elongation.sin()
+        - 0.031 * (m + sun_anomaly).sin()
+        - 0.015 * (2.0 * latitude_argument - 2.0 * elongation).sin()
+        + 0.011 * (m - 4.0 * elongation).sin();
+    latitude += -0.173 * (latitude_argument - 2.0 * elongation).sin()
+        - 0.055 * (m - latitude_argument - 2.0 * elongation).sin()
+        - 0.046 * (m + latitude_argument - 2.0 * elongation).sin()
+        + 0.033 * (latitude_argument + 2.0 * elongation).sin()
+        + 0.017 * (2.0 * m + latitude_argument).sin();
+    (longitude.to_radians(), latitude.to_radians(), distance)
+}
+
+pub fn moon_position(latitude: f64, longitude: f64, unix_seconds: f64) -> MoonPosition {
+    let days = days_since_j2000(unix_seconds);
+    let (moon_longitude, moon_latitude, distance) = moon_ecliptic(days);
+    let (right_ascension, declination) =
+        ecliptic_to_equatorial(moon_longitude, moon_latitude, days);
+    let (geocentric, azimuth) =
+        to_horizontal(latitude, longitude, days, right_ascension, declination);
+    // La Luna esta cerca: vista desde la superficie aparece mas baja que desde el centro de la Tierra.
+    let parallax = (1.0 / distance).asin().to_degrees();
+    let elevation = geocentric - parallax * geocentric.to_radians().cos();
+
+    let separation = moon_longitude - sun_ecliptic_longitude(days);
+    let cos_elongation = moon_latitude.cos() * separation.cos();
+    MoonPosition {
+        elevation,
+        azimuth,
+        illumination: ((1.0 - cos_elongation) / 2.0).clamp(0.0, 1.0),
+        waxing: separation.rem_euclid(std::f64::consts::TAU) < std::f64::consts::PI,
     }
 }
 
@@ -153,6 +274,35 @@ mod tests {
         assert_close(sun_track(270.0, -33.0), 0.0, 1e-9);
         assert_close(sun_track(0.0, -33.0), 0.5, 1e-9);
         assert_close(sun_track(90.0, -33.0), 1.0, 1e-9);
+    }
+
+    // Fases de la Luna de enero de 2024 (UTC).
+    const NEW_MOON_2024_01_11: f64 = 1_704_974_220.0; // 11:57
+    const FIRST_QUARTER_2024_01_18: f64 = 1_705_549_920.0; // 03:52
+    const FULL_MOON_2024_01_25: f64 = 1_706_205_240.0; // 17:54
+
+    #[test]
+    fn moon_illumination_follows_the_phases() {
+        let new = moon_position(MADRID.0, MADRID.1, NEW_MOON_2024_01_11);
+        let quarter = moon_position(MADRID.0, MADRID.1, FIRST_QUARTER_2024_01_18);
+        let full = moon_position(MADRID.0, MADRID.1, FULL_MOON_2024_01_25);
+        assert!(new.illumination < 0.02, "new {}", new.illumination);
+        assert_close(quarter.illumination, 0.5, 0.06);
+        assert!(quarter.waxing);
+        assert!(full.illumination > 0.98, "full {}", full.illumination);
+    }
+
+    #[test]
+    fn winter_full_moon_is_high_over_madrid_at_midnight() {
+        // 26 de enero de 2024 a las 00:30 UTC, cerca de la medianoche local.
+        let moon = moon_position(MADRID.0, MADRID.1, FULL_MOON_2024_01_25 + 6.6 * 3600.0);
+        assert!(moon.elevation > 50.0, "elevation {}", moon.elevation);
+    }
+
+    #[test]
+    fn full_moon_is_below_the_horizon_at_noon() {
+        let moon = moon_position(MADRID.0, MADRID.1, FULL_MOON_2024_01_25 - 5.9 * 3600.0);
+        assert!(moon.elevation < 0.0, "elevation {}", moon.elevation);
     }
 
     #[test]
