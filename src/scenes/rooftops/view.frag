@@ -17,7 +17,7 @@ void main() {
   float night = 1.0 - smoothstep(-6.0, 4.0, u_sun_altitude);
 
   // Cielo: la contaminacion luminica apaga las estrellas y tine de naranja el horizonte de noche.
-  vec3 sky_color = sky_gradient(direction, sun) + sun_disc(direction, sun) + star_field(direction) * 0.35;
+  vec3 sky_color = sky_gradient(direction, sun) + sun_disc(direction, sun) + star_field(direction) * 0.35 + moon_disc(direction, sun);
   vec3 glow = vec3(0.09, 0.05, 0.025) * night * exp(-max(direction.y, 0.0) * 9.0) * (1.0 + u_cloud_deck * 1.5);
   vec4 cloud = cloud_layer(origin, direction, sun);
   sky_color = apply_cloud_deck(mix(sky_color, cloud.rgb + glow * 2.0, cloud.a)) + glow;

@@ -172,6 +172,7 @@ void main() {
 
   float mu = dot(direction, sun);
   vec3 sky_color = sky + to_linear(u_sun_color) * smoothstep(0.99985, 0.99995, mu) * 40.0 * u_sun_visibility;
+  sky_color += moon_disc(direction, sun) + moon_halo(direction);
   out_extra = vec4(pow(aces(sky_color * 1.1), vec3(1.0 / 2.2)), 0.0);
 
   float t = march(origin, direction);
@@ -189,7 +190,7 @@ void main() {
     float hemisphere = 0.5 + 0.5 * normal.y;
     float bounce = max(dot(normal, normalize(vec3(-sun.x, 0.0, -sun.z))), 0.0) * 0.15;
     vec3 albedo = material(p, normal, t);
-    vec3 color = albedo * (sun_light * diffuse + sky_light * hemisphere + sun_light * bounce * 0.3);
+    vec3 color = albedo * (sun_light * diffuse + sky_light * hemisphere + sun_light * bounce * 0.3 + moonlight_on(normal));
 
     // Perspectiva aerea: la distancia funde el terreno con el color del cielo en esa direccion.
     float density = 0.00011 + u_fog * 0.0022 + u_rain * 0.0005;

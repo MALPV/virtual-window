@@ -91,7 +91,7 @@ void main() {
   vec3 sky_light = mix(sky_tint, vec3(luminance(sky_tint)), 0.45) * (0.3 + 0.5 * u_daylight) + vec3(0.012, 0.016, 0.03);
   vec3 bounce = sun_light * vec3(0.9, 0.8, 0.65) * 0.08 * (0.5 - 0.5 * normal.y + 0.3);
   float diffuse = max(dot(normal, sun), 0.0) * soft_shadow(p + normal * 0.05, sun);
-  vec3 color = material(p, normal, t) * (sun_light * diffuse + sky_light * (0.5 + 0.5 * normal.y) + bounce);
+  vec3 color = material(p, normal, t) * (sun_light * diffuse + sky_light * (0.5 + 0.5 * normal.y) + bounce + moonlight_on(normal));
 
   float extinction = exp(-t * (0.00018 + u_fog * 0.0025 + u_rain * 0.0006));
   vec3 haze = apply_cloud_deck(sky_gradient(normalize(vec3(direction.x, 0.02, direction.z)), sun));

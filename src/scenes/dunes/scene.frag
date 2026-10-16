@@ -62,6 +62,7 @@ void main() {
   sky += to_linear(mix(u_sky_horizon, u_sky_top, clamp(direction.y * 2.0, 0.0, 1.0))) * 1.1 * night;
   float mu = dot(direction, sun);
   vec3 sky_color = sky + to_linear(u_sun_color) * smoothstep(0.99985, 0.99995, mu) * 40.0 * u_sun_visibility;
+  sky_color += moon_disc(direction, sun) + moon_halo(direction);
   out_extra = vec4(pow(aces(sky_color * 1.1), vec3(1.0 / 2.2)), 0.0);
 
   float t = march(origin, direction);
@@ -88,7 +89,7 @@ void main() {
   // A contraluz las crestas vistas de canto brillan: es lo que dibuja las dunas al atardecer.
   float grazing = pow(1.0 - max(dot(normal, -direction), 0.0), 3.0);
   float rim = pow(max(dot(direction, sun), 0.0), 6.0) * grazing * 0.8;
-  vec3 color = sand * (sun_light * (diffuse + rim) + sky_light * (0.5 + 0.5 * normal.y) * (0.6 + 0.4 * trough) + bounce);
+  vec3 color = sand * (sun_light * (diffuse + rim) + sky_light * (0.5 + 0.5 * normal.y) * (0.6 + 0.4 * trough) + bounce + moonlight_on(normal) * 1.3);
 
   float extinction = exp(-t * (0.00018 + u_fog * 0.0022 + u_rain * 0.0006 + u_wind_strength * 0.00025));
   vec3 haze = mix(sky * 0.85, to_linear(u_deck_color) * (0.3 + 0.7 * u_daylight), u_cloud_deck * 0.85);

@@ -77,6 +77,10 @@ vec3 sea_color(vec3 origin, vec3 direction, float t, vec3 sun) {
   vec3 halfway = normalize(sun - direction);
   float specular = pow(max(dot(normal, halfway), 0.0), 380.0) * (380.0 + 8.0) / (8.0 * PI);
   color += to_linear(u_sun_color) * specular * 0.6 * u_sun_visibility * sun_clearness();
+  // Estela de luna sobre el agua.
+  vec3 moon_half = normalize(moon_direction() - direction);
+  float moon_specular = pow(max(dot(normal, moon_half), 0.0), 900.0) * 9.0;
+  color += MOON_LIGHT_COLOR * moon_specular * u_moonlight * (1.0 - u_cloud_deck);
 
   float foam = smoothstep(0.55, 0.9, crest) * smoothstep(0.45, 0.9, u_wind_strength) * noise(p.xz * 1.5 + u_time * 0.3);
   color = mix(color, to_linear(vec3(0.85, 0.9, 0.92)) * (0.2 + 0.8 * u_daylight), foam * 0.7);

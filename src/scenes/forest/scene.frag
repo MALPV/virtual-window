@@ -62,6 +62,7 @@ void main() {
   sky += to_linear(mix(u_sky_horizon, u_sky_top, clamp(direction.y * 2.0, 0.0, 1.0))) * 1.1 * night;
   float mu = dot(direction, sun);
   vec3 sky_color = sky + to_linear(u_sun_color) * smoothstep(0.99985, 0.99995, mu) * 40.0 * u_sun_visibility;
+  sky_color += moon_disc(direction, sun) + moon_halo(direction);
   out_extra = vec4(pow(aces(sky_color * 1.1), vec3(1.0 / 2.2)), 0.0);
 
   float t = march(origin, direction);
@@ -91,7 +92,7 @@ void main() {
   float translucency = pow(max(dot(direction, sun), 0.0), 4.0) * shadow * 0.6;
   // Los huecos entre copas reciben menos luz del cielo.
   float occlusion = clamp(0.45 + (p.y - ground) / 30.0, 0.45, 1.0);
-  vec3 color = albedo * (sun_light * (diffuse + translucency) + sky_light * (0.5 + 0.5 * normal.y) * occlusion);
+  vec3 color = albedo * (sun_light * (diffuse + translucency) + sky_light * (0.5 + 0.5 * normal.y) * occlusion + moonlight_on(normal));
 
   // Perspectiva aerea y niebla acumulada en los valles: las crestas lejanas se vuelven azuladas.
   float morning_mist = 0.25 + u_golden_hour * 0.5 + u_fog;

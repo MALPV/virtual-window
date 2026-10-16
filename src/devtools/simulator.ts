@@ -46,7 +46,7 @@ const PRESETS: Record<string, Partial<SimulatorValues>> = {
     condition: "clear",
     cloudCover: 0.15,
     temperature: 12,
-    moonElevation: 32,
+    moonElevation: 12,
     moonTrack: 0.32,
     moonIllumination: 1,
   },

@@ -95,5 +95,5 @@ vec3 light_land(vec3 albedo, vec3 p, vec3 normal, vec3 sun) {
   vec3 sky_light = mix(sky_tint, vec3(luminance(sky_tint)), 0.4) * (0.3 + 0.5 * u_daylight) + vec3(0.012, 0.016, 0.03);
   vec3 bounce = sun_light * vec3(0.9, 0.8, 0.65) * 0.06 * (0.8 - 0.5 * normal.y);
   float diffuse = max(dot(normal, sun), 0.0) * soft_shadow(p + normal * 0.05, sun);
-  return albedo * (sun_light * diffuse + sky_light * (0.5 + 0.5 * normal.y) + bounce);
+  return albedo * (sun_light * diffuse + sky_light * (0.5 + 0.5 * normal.y) + bounce + moonlight_on(normal));
 }

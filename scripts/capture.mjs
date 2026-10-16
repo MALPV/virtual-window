@@ -30,10 +30,20 @@ const weather = (overrides) => ({
 const NO_MOON = { moonElevation: -20, moonTrack: 0.5, moonIllumination: 0.5, moonWaxing: true };
 
 const PRESETS = {
+  crescent: {
+    sunElevation: -14,
+    sunTrack: 0.72,
+    moonElevation: 10,
+    moonTrack: 0.55,
+    moonIllumination: 0.2,
+    moonWaxing: true,
+    locationKnown: true,
+    weather: weather({ cloudCover: 0.1, temperature: 12 }),
+  },
   moon: {
     sunElevation: -30,
     sunTrack: 0.5,
-    moonElevation: 32,
+    moonElevation: 12,
     moonTrack: 0.32,
     moonIllumination: 1,
     moonWaxing: true,

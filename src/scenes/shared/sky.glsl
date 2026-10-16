@@ -13,7 +13,7 @@ vec3 sky_gradient(vec3 direction, vec3 sun) {
   float mu = max(dot(direction, sun), 0.0);
   float halo = pow(mu, 6.0) * 0.25 + pow(mu, 64.0) * 0.5 + pow(mu, 1200.0) * 2.5;
   color += to_linear(u_sun_color) * halo * u_sun_visibility * sun_clearness();
-  return color;
+  return color + moon_halo(direction);
 }
 
 vec3 sun_disc(vec3 direction, vec3 sun) {
@@ -66,7 +66,7 @@ vec3 apply_cloud_deck(vec3 color) {
 vec3 sky(vec3 origin, vec3 direction, vec3 sun, bool with_details) {
   vec3 color = sky_gradient(direction, sun);
   if (with_details) {
-    color += sun_disc(direction, sun) + star_field(direction);
+    color += sun_disc(direction, sun) + star_field(direction) + moon_disc(direction, sun);
     vec4 cloud = cloud_layer(origin, direction, sun);
     color = mix(color, cloud.rgb, cloud.a);
   } else {

@@ -131,7 +131,7 @@ void main() {
   vec3 sky_light = mix(sky_tint, vec3(luminance(sky_tint)), 0.65) * (0.3 + 0.45 * u_daylight) + vec3(0.03, 0.025, 0.02) * (0.3 + 0.7 * u_daylight);
   float diffuse = max(dot(normal, sun), 0.0) * soft_shadow(p + normal * 0.05, sun);
   float occlusion = ambient_occlusion(p, normal);
-  vec3 lit = s.albedo * (sun_light * diffuse + sky_light * (0.55 + 0.45 * normal.y) * occlusion);
+  vec3 lit = s.albedo * (sun_light * diffuse + sky_light * (0.55 + 0.45 * normal.y) * occlusion + moonlight_on(normal));
 
   // Cristal: refleja el cielo segun el angulo y deja ver un interior oscuro.
   vec3 reflected = reflect(direction, normal);

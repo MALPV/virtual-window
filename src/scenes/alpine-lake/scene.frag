@@ -14,6 +14,7 @@ vec3 sky_with_sun(vec3 direction, vec3 sun) {
   float night = 1.0 - smoothstep(-8.0, 2.0, u_sun_altitude);
   color += to_linear(mix(u_sky_horizon, u_sky_top, clamp(direction.y * 2.0, 0.0, 1.0))) * 1.1 * night;
   float mu = dot(direction, sun);
+  color += moon_disc(direction, sun) + moon_halo(direction);
   return color + to_linear(u_sun_color) * smoothstep(0.99985, 0.99995, mu) * 40.0 * u_sun_visibility;
 }
 
