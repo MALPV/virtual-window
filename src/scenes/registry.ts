@@ -1,7 +1,7 @@
 import { SCENE_API_VERSION } from "../engine/world";
 import { SCENE_RENDERERS, type SceneManifest, type SceneModule, type SceneRenderer } from "./types";
 
-export const DEFAULT_SCENE_ID = "alpine-lake";
+export const DEFAULT_SCENE_ID = "open-sea";
 
 const SCENE_ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const MAX_ID_LENGTH = 64;
