@@ -1,10 +1,28 @@
 <div class="open-sea__boat-layer depth-layer">
   <div class="open-sea__boat">
-    <svg class="open-sea__boat-shape" viewBox="0 0 30 30">
-      <path class="open-sea__sail" d="M15 3 L15 22 L4 22 Z" />
-      <path class="open-sea__sail open-sea__sail--jib" d="M16 7 L16 22 L24 22 Z" />
-      <path class="open-sea__hull" d="M3 23 H27 L23 28 H7 Z" />
+    <svg class="open-sea__boat-shape" viewBox="0 0 40 40">
+      <defs>
+        <linearGradient id="open-sea-sail-shade" x1="1" y1="0" x2="0" y2="0.3">
+          <stop class="open-sea__shade-light" offset="0" />
+          <stop class="open-sea__shade-dark" offset="1" />
+        </linearGradient>
+        <linearGradient id="open-sea-jib-shade" x1="0" y1="0" x2="1" y2="0.3">
+          <stop class="open-sea__shade-dark" offset="0" />
+          <stop class="open-sea__shade-light" offset="1" />
+        </linearGradient>
+      </defs>
+      <path class="open-sea__mast" d="M19.5 2 V31" />
+      <path class="open-sea__sail open-sea__sail--main" d="M19 3 C 13 12, 10 22, 8 30 L 19 30 Z" />
+      <path class="open-sea__sail open-sea__sail--jib" d="M20.5 6 L 31 30 L 20.5 30 Z" />
+      <path class="open-sea__topside" d="M4 30.5 H 35 L 32.5 33.5 H 7 Z" />
+      <path class="open-sea__hull" d="M7 33.5 H 32.5 L 30.5 35.5 H 9 Z" />
+      <path class="open-sea__spray" d="M30 35.6 C 33 35.2, 36 35.4, 38 36" />
     </svg>
-    <span class="open-sea__lantern"></span>
+    <svg class="open-sea__reflection" viewBox="0 0 40 40" aria-hidden="true">
+      <path class="open-sea__sail open-sea__sail--main" d="M19 3 C 13 12, 10 22, 8 30 L 19 30 Z" />
+      <path class="open-sea__sail open-sea__sail--jib" d="M20.5 6 L 31 30 L 20.5 30 Z" />
+      <path class="open-sea__topside" d="M4 30.5 H 35 L 32.5 33.5 H 7 Z" />
+    </svg>
+    <span class="open-sea__masthead"></span>
   </div>
 </div>

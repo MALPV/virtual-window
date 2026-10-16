@@ -1,102 +1,148 @@
-/* Velero en el horizonte del shader (66% desde abajo). Esta tan lejos que se mueve como el horizonte. */
+/*
+ * Velero a unos 120 m: con el ojo a 6 m su linea de flotacion cae un 6% por debajo del horizonte
+ * (66% de la altura visible) y un barco de 10 m ocupa cerca del 10% de la altura; barco y reflejo
+ * caben entre el horizonte y el travesano de la ventana clasica. A esa distancia se mueve con el
+ * parallax practicamente igual que el horizonte.
+ */
 [data-scene="open-sea"] .open-sea__boat-layer {
   --depth: 1;
+  --visible-height: calc(100cqh - 2 * var(--overscan));
   pointer-events: none;
   container-type: size;
 }
 
 [data-scene="open-sea"] .open-sea__boat {
+  --boat-size: calc(var(--visible-height) * 0.1);
   position: absolute;
-  bottom: calc(66% - 3px);
+  bottom: calc(var(--overscan) + var(--visible-height) * 0.6 - var(--boat-size) * 0.11);
   left: 0;
-  width: 13px;
-  height: 13px;
-  /* La bruma de la distancia apaga el contraste del velero. */
-  opacity: calc(0.85 - var(--fog-density, 0) * 0.6);
-  filter: saturate(0.7);
+  width: var(--boat-size);
+  height: var(--boat-size);
+  opacity: calc(1 - var(--fog-density, 0) * 0.55);
   will-change: transform;
-  animation: open-sea-sail 600s linear infinite;
-  animation-delay: -140s;
+  animation: open-sea-sail 300s linear infinite;
+  animation-delay: -95s;
 }
 
 /* Duracion por nivel de viento discreto para que la travesia en curso no salte. */
 [data-scene="open-sea"][data-wind-level="breeze"] .open-sea__boat {
-  animation-duration: 420s;
+  animation-duration: 220s;
 }
 
 [data-scene="open-sea"][data-wind-level="strong"] .open-sea__boat {
-  animation-duration: 260s;
+  animation-duration: 160s;
 }
 
 [data-scene="open-sea"][data-wind="left"] .open-sea__boat {
   animation-direction: reverse;
 }
 
-/* Reflejo tenue del velero en el agua. */
-[data-scene="open-sea"] .open-sea__boat::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 18%;
-  width: 64%;
-  height: 70%;
-  background: linear-gradient(to bottom, rgba(240, 240, 235, 0.35), transparent);
-  -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 1px, transparent 1px 2px);
-  mask-image: repeating-linear-gradient(to bottom, #000 0 1px, transparent 1px 2px);
-  opacity: calc(0.2 + 0.6 * var(--daylight, 1));
+[data-scene="open-sea"][data-wind="left"] .open-sea__boat-shape,
+[data-scene="open-sea"][data-wind="left"] .open-sea__reflection {
+  scale: -1 1;
 }
 
-[data-scene="open-sea"] .open-sea__boat-shape {
+[data-scene="open-sea"] .open-sea__boat-shape,
+[data-scene="open-sea"] .open-sea__reflection {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
-  transform-origin: 50% 90%;
-  animation: open-sea-bob 4s ease-in-out infinite alternate;
+  overflow: visible;
+}
+
+[data-scene="open-sea"] .open-sea__boat-shape {
+  transform-origin: 50% 88%;
+  animation: open-sea-bob 4.5s ease-in-out infinite alternate;
 }
 
 [data-scene="open-sea"][data-wind-level="strong"] .open-sea__boat-shape {
-  animation-duration: 1.6s;
+  animation-duration: 1.8s;
+}
+
+/* Reflejo invertido bajo la linea de flotacion, roto por el oleaje. */
+[data-scene="open-sea"] .open-sea__reflection {
+  top: 76%;
+  transform: scaleY(-0.7);
+  transform-origin: 50% 0;
+  opacity: calc(0.18 + 0.22 * var(--daylight, 1));
+  -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 1px, transparent 1px 3px);
+  mask-image: repeating-linear-gradient(to bottom, #000 0 1px, transparent 1px 3px);
+}
+
+/* Las velas toman el color de la luz: blancas a mediodia, calidas al atardecer, oscuras de noche. */
+[data-scene="open-sea"] .open-sea__boat {
+  --sail-lit: color-mix(in oklab, #f7f4ec, var(--sun-color, #fff8ea) calc(var(--golden-hour, 0) * 55%));
+  --sail: color-mix(in oklab, var(--sail-lit) calc(var(--daylight, 1) * 100%), #2a3048);
 }
 
 [data-scene="open-sea"] .open-sea__sail {
-  fill: color-mix(in srgb, #f6f1e7 calc(var(--daylight, 1) * 100%), #3a4054);
+  fill: url(#open-sea-sail-shade);
 }
 
 [data-scene="open-sea"] .open-sea__sail--jib {
-  opacity: 0.85;
+  fill: url(#open-sea-jib-shade);
+}
+
+/* Las velas no son planas: se oscurecen hacia la baluma. */
+[data-scene="open-sea"] .open-sea__shade-light {
+  stop-color: var(--sail);
+}
+
+[data-scene="open-sea"] .open-sea__shade-dark {
+  stop-color: color-mix(in oklab, var(--sail), #000 22%);
+}
+
+[data-scene="open-sea"] .open-sea__mast {
+  fill: none;
+  stroke: color-mix(in srgb, #8a8f96 calc(var(--daylight, 1) * 100%), #10131c);
+  stroke-width: 0.8;
+}
+
+[data-scene="open-sea"] .open-sea__topside {
+  fill: color-mix(in oklab, #e9e6df calc(var(--daylight, 1) * 100%), #1a1e2c);
 }
 
 [data-scene="open-sea"] .open-sea__hull {
-  fill: color-mix(in srgb, #3b2f2a calc(var(--daylight, 1) * 100%), #0c0d14);
+  fill: color-mix(in oklab, #1f3550 calc(var(--daylight, 1) * 100%), #0a0c14);
 }
 
-[data-scene="open-sea"] .open-sea__lantern {
+[data-scene="open-sea"] .open-sea__spray {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  opacity: calc(0.3 + 0.7 * var(--daylight, 1));
+}
+
+[data-scene="open-sea"] .open-sea__masthead {
   position: absolute;
-  top: 1px;
-  left: 50%;
+  top: 3%;
+  left: 48.75%;
   width: 2px;
   height: 2px;
   border-radius: 50%;
-  background: #ffe9a8;
-  box-shadow: 0 0 5px 2px rgba(255, 220, 140, 0.7);
+  background: #fff4d6;
+  box-shadow: 0 0 6px 2px rgba(255, 236, 190, 0.75);
   opacity: clamp(0, (0.5 - var(--daylight, 1)) * 3, 1);
   transition: opacity var(--environment-transition);
 }
 
 @keyframes open-sea-sail {
   from {
-    transform: translateX(-30px);
+    transform: translateX(calc(var(--boat-size) * -1.2));
   }
   to {
-    transform: translateX(calc(100cqw + 30px));
+    transform: translateX(calc(100cqw + var(--boat-size) * 0.2));
   }
 }
 
 @keyframes open-sea-bob {
   from {
-    transform: translateY(0) rotate(-2deg);
+    transform: translateY(0) rotate(-1.8deg);
   }
   to {
-    transform: translateY(1.5px) rotate(2.5deg);
+    transform: translateY(1px) rotate(2.2deg);
   }
 }
