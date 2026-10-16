@@ -29,13 +29,21 @@ vec3 building(vec2 cell) {
   float distance = length(center);
   // Nuestro propio edificio y la calle frente a la ventana quedan libres.
   if (center.y < CELL && abs(center.x) < CELL * 1.5) return vec3(0.0);
+  // Algunos solares y plazas sin edificar rompen la reticula.
+  if (hash12(cell + 13.7) < 0.08) return vec3(0.0);
   float downtown = smoothstep(300.0, 1800.0, distance);
   float height = 9.0 + 24.0 * hash12(cell + 3.1);
   if (hash12(cell) > 0.9 - 0.14 * downtown) height = 50.0 + (80.0 + 120.0 * downtown) * hash12(cell + 7.7);
   // Cerca de la ventana los edificios quedan por debajo del ojo, para ver por encima de los tejados.
   height = mix(height, min(height, 12.0 + 8.0 * hash12(cell + 5.1)), 1.0 - smoothstep(90.0, 300.0, distance));
-  vec2 half_size = (CELL - STREET) * 0.5 * vec2(0.62 + 0.38 * hash12(cell + 1.3), 0.62 + 0.38 * hash12(cell + 2.9));
+  vec2 half_size = (CELL - STREET) * 0.5 * vec2(0.55 + 0.45 * hash12(cell + 1.3), 0.55 + 0.45 * hash12(cell + 2.9));
   return vec3(half_size, height);
+}
+
+// Desplazamiento del edificio dentro de su parcela: las fachadas no quedan alineadas en una reticula.
+vec2 building_offset(vec2 cell, vec3 b) {
+  vec2 slack = (CELL - STREET) * 0.5 - b.xy;
+  return (vec2(hash12(cell + 21.0), hash12(cell + 22.0)) - 0.5) * 2.0 * slack;
 }
 
 float box(vec3 p, vec3 b) {
@@ -51,6 +59,7 @@ float city_distance(vec3 world) {
   vec3 b = building(cell);
   float d = p.y;
   if (b.z > 0.5) {
+    local -= building_offset(cell, b);
     d = min(d, box(vec3(local.x, p.y - b.z * 0.5, local.y), vec3(b.x, b.z * 0.5, b.y)));
     // Casetas y maquinas en la azotea.
     vec2 offset = (vec2(hash12(cell + 4.4), hash12(cell + 5.5)) - 0.5) * b.xy;

@@ -77,11 +77,22 @@ Surface surface_at(vec3 world, vec3 world_normal, float t) {
     s.albedo = mix(vec3(0.06), vec3(0.14, 0.135, 0.13), 1.0 - sidewalk);
     return s;
   }
+  // Paleta de materiales urbanos: piedra caliza, ladrillo, revoco ocre, hormigon y fachadas oscuras.
   float style = hash12(cell + 9.0);
-  vec3 wall = style < 0.35 ? vec3(0.36, 0.34, 0.31) : style < 0.6 ? vec3(0.32, 0.17, 0.12) : style < 0.8 ? vec3(0.5, 0.46, 0.4) : vec3(0.18, 0.2, 0.22);
-  wall *= 0.85 + 0.3 * hash12(cell + 6.0);
+  vec3 wall = style < 0.22 ? vec3(0.46, 0.41, 0.34)
+    : style < 0.44 ? vec3(0.34, 0.17, 0.11)
+    : style < 0.6 ? vec3(0.5, 0.38, 0.24)
+    : style < 0.78 ? vec3(0.38, 0.37, 0.35)
+    : style < 0.9 ? vec3(0.54, 0.5, 0.44)
+    : vec3(0.17, 0.18, 0.2);
+  wall *= 0.82 + 0.3 * hash12(cell + 6.0);
+  // Envejecimiento: manchas de humedad y suciedad que bajan desde las cornisas.
+  wall *= 0.88 + 0.12 * noise(vec2(p.x + p.z, p.y * 0.25) * 0.3);
   if (normal.y > 0.5) {
-    s.albedo = vec3(0.1, 0.098, 0.095) * (0.8 + 0.4 * noise(p.xz * 0.3));
+    // Azoteas: tela asfaltica oscura, grava clara o terrazas.
+    float roof = hash12(cell + 17.0);
+    vec3 roof_color = roof < 0.5 ? vec3(0.1, 0.098, 0.095) : roof < 0.8 ? vec3(0.28, 0.27, 0.25) : vec3(0.36, 0.2, 0.14);
+    s.albedo = roof_color * (0.8 + 0.4 * noise(p.xz * 0.3));
     return s;
   }
   // Fachada: rejilla de plantas y ventanas; las torres son muro cortina de cristal.
@@ -125,10 +136,11 @@ void main() {
   Surface s = surface_at(p, normal, t);
 
   float above = smoothstep(-2.0, 5.0, u_sun_altitude);
-  vec3 sun_light = to_linear(u_sun_color) * 2.1 * above * mix(1.0, 0.3, u_cloud_deck);
+  // La luz del sol en la ciudad: algo mas calida que en el campo por el aire urbano.
+  vec3 sun_light = to_linear(u_sun_color) * vec3(1.06, 1.0, 0.9) * 2.3 * above * mix(1.0, 0.3, u_cloud_deck);
   // Luz de cielo poco saturada mas el rebote calido de calles y fachadas.
   vec3 sky_tint = to_linear(mix(u_sky_horizon, u_sky_top, 0.6));
-  vec3 sky_light = mix(sky_tint, vec3(luminance(sky_tint)), 0.65) * (0.3 + 0.45 * u_daylight) + vec3(0.03, 0.025, 0.02) * (0.3 + 0.7 * u_daylight);
+  vec3 sky_light = mix(sky_tint, vec3(luminance(sky_tint)), 0.75) * (0.28 + 0.4 * u_daylight) + vec3(0.045, 0.035, 0.025) * (0.3 + 0.7 * u_daylight);
   float diffuse = max(dot(normal, sun), 0.0) * soft_shadow(p + normal * 0.05, sun);
   float occlusion = ambient_occlusion(p, normal);
   vec3 lit = s.albedo * (sun_light * diffuse + sky_light * (0.55 + 0.45 * normal.y) * occlusion + moonlight_on(normal));
@@ -143,7 +155,9 @@ void main() {
 
   // Bruma urbana con la distancia.
   float extinction = exp(-t * (0.00045 + u_fog * 0.003 + u_rain * 0.0008));
+  // Bruma urbana calida y algo parda, no el azul limpio del cielo.
   vec3 haze = apply_cloud_deck(sky_gradient(normalize(vec3(direction.x, 0.03, direction.z)), sun));
+  haze = mix(haze, vec3(luminance(haze)) * vec3(1.08, 1.0, 0.88), 0.45 * u_daylight);
   haze *= min(1.0, 0.5 / max(luminance(haze), 1e-3));
   haze = mix(haze, to_linear(u_fog_color) * (0.4 + 0.6 * u_daylight), u_fog * 0.8);
   color = color * extinction + haze * (1.0 - extinction);
