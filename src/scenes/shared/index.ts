@@ -1,4 +1,5 @@
 import atmosphere from "./atmosphere.glsl?raw";
+import cache from "./cache.glsl?raw";
 import noise from "./noise.glsl?raw";
 import ocean from "./ocean.glsl?raw";
 import sky from "./sky.glsl?raw";
@@ -15,5 +16,6 @@ export const SHARED_GLSL: Readonly<Record<string, string>> = {
   "window.glsl": windowOptics,
   "atmosphere.glsl": atmosphere,
   "sky.glsl": sky,
+  "cache.glsl": cache,
   "ocean.glsl": ocean,
 };

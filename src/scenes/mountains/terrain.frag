@@ -2,7 +2,9 @@
 #include "common.glsl"
 #include "atmosphere.glsl"
 
-out vec4 out_color;
+// Salida 0: terreno premultiplicado por su cobertura. Salida 1: cielo en rgb y profundidad en alfa.
+layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 out_extra;
 
 const float MAX_DISTANCE = 6000.0;
 const int MARCH_STEPS = 220;
@@ -168,13 +170,16 @@ void main() {
   vec3 night_sky = to_linear(mix(u_sky_horizon, u_sky_top, clamp(direction.y * 2.0, 0.0, 1.0))) * 1.1;
   sky += night_sky * night;
 
+  float mu = dot(direction, sun);
+  vec3 sky_color = sky + to_linear(u_sun_color) * smoothstep(0.99985, 0.99995, mu) * 40.0 * u_sun_visibility;
+  out_extra = vec4(pow(aces(sky_color * 1.1), vec3(1.0 / 2.2)), 0.0);
+
   float t = march(origin, direction);
-  vec3 color;
-  float depth = 0.0;
   if (t < 0.0) {
-    float mu = dot(direction, sun);
-    color = sky + to_linear(u_sun_color) * smoothstep(0.99985, 0.99995, mu) * 40.0 * u_sun_visibility;
-  } else {
+    out_color = vec4(0.0);
+    return;
+  }
+  {
     vec3 p = origin + direction * t;
     vec3 normal = terrain_normal(p, t);
     float above = smoothstep(-2.0, 5.0, u_sun_altitude);
@@ -184,7 +189,7 @@ void main() {
     float hemisphere = 0.5 + 0.5 * normal.y;
     float bounce = max(dot(normal, normalize(vec3(-sun.x, 0.0, -sun.z))), 0.0) * 0.15;
     vec3 albedo = material(p, normal, t);
-    color = albedo * (sun_light * diffuse + sky_light * hemisphere + sun_light * bounce * 0.3);
+    vec3 color = albedo * (sun_light * diffuse + sky_light * hemisphere + sun_light * bounce * 0.3);
 
     // Perspectiva aerea: la distancia funde el terreno con el color del cielo en esa direccion.
     float density = 0.00011 + u_fog * 0.0022 + u_rain * 0.0005;
@@ -194,10 +199,7 @@ void main() {
     vec3 haze = mix(sky * 0.9, to_linear(u_deck_color) * (0.3 + 0.7 * u_daylight), u_cloud_deck * 0.85);
     haze = mix(haze, to_linear(u_fog_color) * (0.4 + 0.6 * u_daylight), u_fog * 0.8);
     color = color * extinction + haze * (1.0 - extinction);
-    depth = max(1.0 - exp(-t / DEPTH_SCALE), 1.0 / 255.0);
+    out_color = vec4(pow(aces(color * 1.1), vec3(1.0 / 2.2)), 1.0);
+    out_extra.a = max(1.0 - exp(-t / DEPTH_SCALE), 1.0 / 255.0);
   }
-
-  color = aces(color * 1.1);
-  color = pow(color, vec3(1.0 / 2.2));
-  out_color = vec4(color, depth);
 }

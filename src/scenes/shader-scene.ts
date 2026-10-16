@@ -8,7 +8,7 @@ export { FULLSCREEN_VERTEX_SHADER };
 const DEFAULT_MAX_PIXEL_RATIO = 1.5;
 const DEFAULT_MAX_FPS = 30;
 const DEFAULT_FOCUS_TIME_SCALE = 0.6;
-const DEFAULT_MOVING_SCALE = 0.5;
+const DEFAULT_MOVING_SCALE = 0.75;
 /** Time without parallax changes after which the cached pass is refined at full resolution. */
 const PARALLAX_SETTLE_MS = 200;
 const INCLUDE_PATTERN = /^[ \t]*#include[ \t]+"([^"]+)"[ \t]*$/gm;
@@ -37,7 +37,7 @@ export interface UniformWriter {
 export interface CachedPassOptions {
   /** Expensive fragment shader, rendered into a texture only when its inputs change. */
   fragment: string;
-  /** Resolution multiplier while the viewer moves. Defaults to 0.5. */
+  /** Resolution multiplier while the viewer moves. Defaults to 0.75. */
   movingScale?: number;
 }
 
@@ -46,7 +46,9 @@ export interface ShaderSceneOptions {
   fragment: string;
   /**
    * Optional expensive pass (terrain, lighting, sky scattering). It is rendered again only when the
-   * world, the parallax or the size change, and the main pass reads it as `u_cached` (sampler2D).
+   * world, the parallax or the size change. It writes two outputs (layout locations 0 and 1) that
+   * the main pass reads as `u_cached` and `u_cached_extra`. Store color premultiplied by coverage
+   * in location 0 (coverage in alpha) so silhouettes blend correctly when the pass is upscaled.
    */
   cached?: CachedPassOptions;
   /** Defaults to a full-screen triangle. */
@@ -124,7 +126,10 @@ class Pass {
 
 interface CachedTarget {
   pass: Pass;
+  /** Attachment 0 (`u_cached`): color premultiplied by coverage, coverage in alpha. */
   texture: WebGLTexture;
+  /** Attachment 1 (`u_cached_extra`): free-form data, typically depth premultiplied by coverage. */
+  extra: WebGLTexture;
   framebuffer: WebGLFramebuffer;
   width: number;
   height: number;
@@ -136,16 +141,26 @@ interface GpuResources {
   vao: WebGLVertexArrayObject;
 }
 
-function createCachedTarget(gl: WebGL2RenderingContext, vertexSource: string, fragmentSource: string): CachedTarget {
-  const pass = new Pass(gl, link(gl, vertexSource, fragmentSource));
+function createLinearTexture(gl: WebGL2RenderingContext): WebGLTexture {
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  const framebuffer = gl.createFramebuffer();
-  return { pass, texture, framebuffer, width: 0, height: 0 };
+  return texture;
+}
+
+function createCachedTarget(gl: WebGL2RenderingContext, vertexSource: string, fragmentSource: string): CachedTarget {
+  const pass = new Pass(gl, link(gl, vertexSource, fragmentSource));
+  return {
+    pass,
+    texture: createLinearTexture(gl),
+    extra: createLinearTexture(gl),
+    framebuffer: gl.createFramebuffer(),
+    width: 0,
+    height: 0,
+  };
 }
 
 function createResources(
@@ -165,6 +180,7 @@ function disposeResources(gl: WebGL2RenderingContext, resources: GpuResources): 
   if (resources.cached !== null) {
     resources.cached.pass.dispose();
     gl.deleteTexture(resources.cached.texture);
+    gl.deleteTexture(resources.cached.extra);
     gl.deleteFramebuffer(resources.cached.framebuffer);
   }
   gl.deleteVertexArray(resources.vao);
@@ -219,11 +235,17 @@ export function shaderScene(options: ShaderSceneOptions): SceneModule {
       const renderCached = (target: CachedTarget, vao: WebGLVertexArrayObject, scale: number) => {
         const width = Math.max(1, Math.round(canvas.width * scale));
         const height = Math.max(1, Math.round(canvas.height * scale));
-        gl.bindTexture(gl.TEXTURE_2D, target.texture);
         if (target.width !== width || target.height !== height) {
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
           gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
-          gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.texture, 0);
+          for (const [attachment, texture] of [
+            [gl.COLOR_ATTACHMENT0, target.texture],
+            [gl.COLOR_ATTACHMENT1, target.extra],
+          ] as const) {
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, attachment, gl.TEXTURE_2D, texture, 0);
+          }
+          gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
           target.width = width;
           target.height = height;
         }
@@ -258,6 +280,10 @@ export function shaderScene(options: ShaderSceneOptions): SceneModule {
           gl.activeTexture(gl.TEXTURE0);
           gl.bindTexture(gl.TEXTURE_2D, cached.texture);
           gl.uniform1i(main.location("u_cached"), 0);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, cached.extra);
+          gl.uniform1i(main.location("u_cached_extra"), 1);
+          gl.activeTexture(gl.TEXTURE0);
         }
         writeCommonUniforms(main, canvas.width, canvas.height);
         gl.drawArrays(gl.TRIANGLES, 0, 3);

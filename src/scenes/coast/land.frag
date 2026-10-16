@@ -2,7 +2,9 @@
 #include "common.glsl"
 #include "sky.glsl"
 
-out vec4 out_color;
+// Salida 0: tierra premultiplicada por su cobertura. Salida 1: profundidad en alfa.
+layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 out_extra;
 
 const int MARCH_STEPS = 180;
 const int SHADOW_STEPS = 40;
@@ -28,7 +30,11 @@ vec3 land_normal(vec3 p, float t) {
   float e = max(0.004 * t, 0.03);
   int octaves = min(octaves_at(t) + 1, 7);
   float h = land_height(p.xz, octaves);
-  return normalize(vec3(h - land_height(p.xz + vec2(e, 0.0), octaves), e, h - land_height(p.xz + vec2(0.0, e), octaves)));
+  vec3 normal = normalize(vec3(h - land_height(p.xz + vec2(e, 0.0), octaves), e, h - land_height(p.xz + vec2(0.0, e), octaves)));
+  // Relieve fino de la roca: solo de cerca, donde se aprecia, para no generar ruido a distancia.
+  float near = 1.0 - smoothstep(150.0, 600.0, t);
+  vec2 bump = vec2(noise(p.zy * 0.8) - 0.5, noise(p.xy * 0.8 + 7.0) - 0.5) * 0.35 * near;
+  return normalize(normal + vec3(bump.x, 0.0, bump.y));
 }
 
 float soft_shadow(vec3 origin, vec3 sun) {
@@ -50,8 +56,10 @@ vec3 material(vec3 p, vec3 normal, float t) {
   float steep = 1.0 - normal.y;
   float variation = fbm(p.xz * 0.06 / lod, 4);
   // Roca de acantilado con estratos horizontales; hierba y matorral seco en lo alto.
-  float strata = 0.5 + 0.5 * sin(p.y * 1.3 + fbm(p.xz * 0.03 / lod, 3) * 3.0);
-  vec3 rock = mix(vec3(0.2, 0.15, 0.11), vec3(0.36, 0.28, 0.2), strata * 0.65 + variation * 0.35);
+  // Estratos anchos y suaves, mas regueros verticales que deja el agua de lluvia en la pared.
+  float strata = smoothstep(0.2, 0.8, 0.5 + 0.5 * sin(p.y * 0.45 + noise(p.xz * 0.02) * 1.2));
+  float streaks = noise(vec2((p.x + p.z) * 0.18 / lod, p.y * 0.015));
+  vec3 rock = mix(vec3(0.24, 0.18, 0.13), vec3(0.4, 0.32, 0.24), strata * 0.35 + variation * 0.35 + streaks * 0.3);
   vec3 grass = mix(vec3(0.07, 0.1, 0.04), vec3(0.15, 0.16, 0.07), variation);
   vec3 albedo = mix(grass, rock, smoothstep(0.35, 0.6, steep + (variation - 0.5) * 0.15));
   // Arena o roca humeda en la base, junto al agua.
@@ -71,6 +79,7 @@ void main() {
   // Lo que queda bajo el nivel del mar lo dibuja el oceano en el pase principal.
   if (t < 0.0 || p.y < 0.25) {
     out_color = vec4(0.0);
+    out_extra = vec4(0.0);
     return;
   }
 
@@ -89,6 +98,6 @@ void main() {
   haze = mix(haze, to_linear(u_fog_color) * (0.4 + 0.6 * u_daylight), u_fog * 0.8);
   color = color * extinction + haze * (1.0 - extinction);
 
-  vec3 encoded = pow(aces(color * 1.1), vec3(1.0 / 2.2));
-  out_color = vec4(encoded, max(1.0 - exp(-t / DEPTH_SCALE), 1.0 / 255.0));
+  out_color = vec4(pow(aces(color * 1.1), vec3(1.0 / 2.2)), 1.0);
+  out_extra = vec4(0.0, 0.0, 0.0, max(1.0 - exp(-t / DEPTH_SCALE), 1.0 / 255.0));
 }
