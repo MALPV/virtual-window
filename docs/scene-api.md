@@ -151,7 +151,7 @@ The engine suggests a realistic palette. Use it, ignore it, or derive your own c
 }
 ```
 
-See `src/scenes/rooftops` for a complete stylized example.
+The template in `src/scenes/_template` derives its ground color from `--land-brightness` the same way.
 
 ### Data attributes
 
@@ -190,7 +190,7 @@ The cursor stands in for the viewer's head. Far things move more than near thing
 
 Both utilities set `transform`. Don't animate `transform` on the same element: put the animated element inside.
 
-**Anchoring HTML to an SVG.** SVGs with `preserveAspectRatio="xMidYMax slice"` and a 400x600 viewBox can host absolutely positioned HTML sprites (which animate on the GPU) with container query units. See `--s` in `src/scenes/alpine-lake/scene.css`.
+**Anchoring HTML to an SVG.** SVGs with `preserveAspectRatio="xMidYMax slice"` and a 400x600 viewBox can host absolutely positioned HTML sprites (which animate on the GPU) with container query units: define `--s: max(calc(100cqw / 400), calc(100cqh / 600))` on the scene root, set `container-type: size` on the layer, and position a sprite with `left: calc(50% + (x - 200) * var(--s))` and `top: calc(100% - (600 - y) * var(--s))`.
 
 ## JavaScript contract
 
