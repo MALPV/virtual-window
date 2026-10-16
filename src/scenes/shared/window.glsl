@@ -33,9 +33,12 @@ vec3 moon_direction() {
   return normalize(vec3(sin(azimuth) * cos(altitude), sin(altitude), cos(azimuth) * cos(altitude)));
 }
 
-// Luz de luna difusa sobre una superficie. Sin sombras: es tenue y su coste no compensaria.
+// Luz nocturna sobre una superficie: luna difusa (sin sombras: es tenue y su coste no compensaria)
+// mas la luz de las estrellas y del resplandor del cielo, que deja ver siluetas en noches sin luna.
 vec3 moonlight_on(vec3 normal) {
-  return MOON_LIGHT_COLOR * 0.5 * u_moonlight * max(dot(normal, moon_direction()), 0.0);
+  vec3 moon = MOON_LIGHT_COLOR * 0.5 * u_moonlight * max(dot(normal, moon_direction()), 0.0);
+  vec3 starlight = vec3(0.04, 0.05, 0.09) * (1.0 - u_daylight) * (1.0 - u_cloud_deck * 0.5) * (0.5 + 0.5 * normal.y);
+  return moon + starlight;
 }
 
 vec3 moon_halo(vec3 direction) {
