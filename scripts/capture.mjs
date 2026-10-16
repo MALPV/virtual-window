@@ -1,7 +1,10 @@
 // Captura cada escena con varios climas y horas para revisarlas visualmente sin abrir la app.
 // Uso: npm run capture [-- escena1 escena2 ...] [-- --presets=noon,night] [-- --moving]
 // --moving anade una captura en mitad de un movimiento del cursor (pase en cache a baja resolucion).
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+// --save-baseline guarda las capturas como referencia "antes"; las siguientes ejecuciones generan
+// <escena>-compare.png con el antes y el despues lado a lado.
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,6 +13,7 @@ import { createServer } from "vite";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const OUTPUT = join(ROOT, ".captures");
+const BASELINE = join(OUTPUT, "baseline");
 const WINDOW_SIZE = { width: 300, height: 400 };
 const SETTLE_MS = 2200;
 
@@ -51,15 +55,20 @@ function parseArgs(argv) {
   const scenes = [];
   let presets = Object.keys(PRESETS);
   let moving = false;
+  let saveBaseline = false;
   for (const arg of argv) {
     if (arg === "--moving") {
       moving = true;
       continue;
     }
+    if (arg === "--save-baseline") {
+      saveBaseline = true;
+      continue;
+    }
     if (arg.startsWith("--presets=")) presets = arg.slice("--presets=".length).split(",").filter((p) => p in PRESETS);
     else if (!arg.startsWith("--")) scenes.push(arg);
   }
-  return { scenes, presets, moving };
+  return { scenes, presets, moving, saveBaseline };
 }
 
 async function contactSheet(page, scene, presets) {
@@ -78,8 +87,30 @@ async function contactSheet(page, scene, presets) {
   await page.screenshot({ path: join(OUTPUT, `${scene}-sheet.png`), fullPage: true });
 }
 
+async function compareSheet(page, scene, presets) {
+  const rows = [];
+  for (const preset of presets) {
+    const before = join(BASELINE, `${scene}-${preset}.png`);
+    if (!existsSync(before)) continue;
+    const [a, b] = await Promise.all([readFile(before), readFile(join(OUTPUT, `${scene}-${preset}.png`))]);
+    rows.push(`<div class="row"><span>${preset}</span>
+      <figure><img src="data:image/png;base64,${a.toString("base64")}"><figcaption>Antes</figcaption></figure>
+      <figure><img src="data:image/png;base64,${b.toString("base64")}"><figcaption>Despues</figcaption></figure></div>`);
+  }
+  if (rows.length === 0) return false;
+  const html = `<!doctype html><style>
+    body{margin:0;background:#1e2024;font:13px system-ui;color:#ccc;padding:12px}
+    .row{display:grid;grid-template-columns:70px 300px 300px;gap:12px;align-items:center;margin-bottom:12px}
+    figure{margin:0} img{width:300px;height:400px;display:block} figcaption{padding:4px 0}
+  </style>${rows.join("")}`;
+  await page.setContent(html);
+  await page.setViewportSize({ width: 70 + 600 + 24 + 24, height: rows.length * 436 + 24 });
+  await page.screenshot({ path: join(OUTPUT, `${scene}-compare.png`), fullPage: true });
+  return true;
+}
+
 async function main() {
-  const { scenes: requested, presets, moving } = parseArgs(process.argv.slice(2));
+  const { scenes: requested, presets, moving, saveBaseline } = parseArgs(process.argv.slice(2));
   await mkdir(OUTPUT, { recursive: true });
 
   const server = await createServer({ root: ROOT, logLevel: "error", server: { port: 1431, strictPort: false } });
@@ -129,6 +160,14 @@ async function main() {
       }
       const sheetPage = await browser.newPage({ deviceScaleFactor: 1 });
       await contactSheet(sheetPage, scene, presets);
+      if (saveBaseline) {
+        await mkdir(BASELINE, { recursive: true });
+        for (const preset of presets) {
+          await copyFile(join(OUTPUT, `${scene}-${preset}.png`), join(BASELINE, `${scene}-${preset}.png`));
+        }
+      } else if (await compareSheet(sheetPage, scene, presets)) {
+        console.log(`compare sheet for ${scene}`);
+      }
       await sheetPage.close();
       console.log(`captured ${scene}`);
     }
