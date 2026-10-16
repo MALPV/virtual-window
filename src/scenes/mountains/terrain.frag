@@ -1,6 +1,7 @@
 #version 300 es
 #include "common.glsl"
 #include "atmosphere.glsl"
+#include "terrain.glsl"
 
 // Salida 0: terreno premultiplicado por su cobertura. Salida 1: cielo en rgb y profundidad en alfa.
 layout(location = 0) out vec4 out_color;
@@ -12,36 +13,7 @@ const int SHADOW_STEPS = 48;
 
 
 
-// Ruido con derivadas: permite atenuar los detalles en las pendientes y simular erosion.
-vec3 noise_with_derivatives(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  vec2 du = 6.0 * f * (1.0 - f);
-  float a = hash12(i);
-  float b = hash12(i + vec2(1.0, 0.0));
-  float c = hash12(i + vec2(0.0, 1.0));
-  float d = hash12(i + vec2(1.0, 1.0));
-  float value = a + (b - a) * u.x + (c - a) * u.y + (a - b - c + d) * u.x * u.y;
-  vec2 derivative = du * (vec2(b - a, c - a) + (a - b - c + d) * u.yx);
-  return vec3(value, derivative);
-}
 
-float eroded_mountains(vec2 p, int octaves) {
-  float value = 0.0;
-  float amplitude = 1.0;
-  vec2 slope = vec2(0.0);
-  mat2 rotate = mat2(0.8, -0.6, 0.6, 0.8);
-  for (int i = 0; i < 11; i++) {
-    if (i >= octaves) break;
-    vec3 n = noise_with_derivatives(p);
-    slope += n.yz;
-    value += amplitude * n.x / (1.0 + dot(slope, slope));
-    amplitude *= 0.5;
-    p = rotate * p * 2.0;
-  }
-  return value;
-}
 
 // Composicion "a traves del valle": la casa esta en lo alto de una ladera, el fondo del valle queda
 // 400 m mas abajo y la ladera de enfrente llena la ventana hasta sus cumbres.
@@ -89,6 +61,11 @@ float terrain(vec2 p, int octaves) {
   return ground + tree_height(p, ground);
 }
 
+// Las funciones compartidas de terrain.glsl (sombra suave) trazan el mismo relieve con abetos.
+float land_height(vec2 p, int octaves) {
+  return terrain(p, octaves);
+}
+
 int octaves_at(float distance) {
   return int(clamp(11.0 - log2(1.0 + distance * 0.02), 4.0, 11.0));
 }
@@ -113,19 +90,6 @@ vec3 terrain_normal(vec3 p, float t) {
   return normalize(vec3(h - terrain(p.xz + vec2(e, 0.0), octaves), e, h - terrain(p.xz + vec2(0.0, e), octaves)));
 }
 
-float soft_shadow(vec3 origin, vec3 sun) {
-  if (sun.y <= 0.0) return 0.0;
-  float result = 1.0;
-  float t = 0.5;
-  for (int i = 0; i < SHADOW_STEPS; i++) {
-    vec3 p = origin + sun * t;
-    float h = p.y - terrain(p.xz, 6);
-    result = min(result, 10.0 * h / t);
-    if (result < 0.01 || t > 3000.0) break;
-    t += clamp(h * 0.6, 0.5 + 0.02 * t, 80.0);
-  }
-  return clamp(result, 0.0, 1.0);
-}
 
 vec3 material(vec3 p, vec3 normal, float t) {
   float ground = ground_height(p.xz, 6);
