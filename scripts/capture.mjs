@@ -1,5 +1,6 @@
 // Captura cada escena con varios climas y horas para revisarlas visualmente sin abrir la app.
-// Uso: npm run capture [-- escena1 escena2 ...] [-- --presets=noon,night]
+// Uso: npm run capture [-- escena1 escena2 ...] [-- --presets=noon,night] [-- --moving]
+// --moving anade una captura en mitad de un movimiento del cursor (pase en cache a baja resolucion).
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,11 +50,16 @@ const PRESETS = {
 function parseArgs(argv) {
   const scenes = [];
   let presets = Object.keys(PRESETS);
+  let moving = false;
   for (const arg of argv) {
+    if (arg === "--moving") {
+      moving = true;
+      continue;
+    }
     if (arg.startsWith("--presets=")) presets = arg.slice("--presets=".length).split(",").filter((p) => p in PRESETS);
     else if (!arg.startsWith("--")) scenes.push(arg);
   }
-  return { scenes, presets };
+  return { scenes, presets, moving };
 }
 
 async function contactSheet(page, scene, presets) {
@@ -73,7 +79,7 @@ async function contactSheet(page, scene, presets) {
 }
 
 async function main() {
-  const { scenes: requested, presets } = parseArgs(process.argv.slice(2));
+  const { scenes: requested, presets, moving } = parseArgs(process.argv.slice(2));
   await mkdir(OUTPUT, { recursive: true });
 
   const server = await createServer({ root: ROOT, logLevel: "error", server: { port: 1431, strictPort: false } });
@@ -109,6 +115,17 @@ async function main() {
         const active = await page.evaluate(() => window.__windowDev.activeScene());
         if (active !== scene) errors.push(`${scene}: expected active scene, got ${active} (failed to mount?)`);
         await page.locator(".window").screenshot({ path: join(OUTPUT, `${scene}-${preset}.png`) });
+      }
+      if (moving) {
+        // Mueve el cursor de lado a lado y captura antes de que el pase en cache se refine.
+        await page.evaluate((snapshot) => window.__windowDev.simulate(snapshot), PRESETS.noon);
+        await page.waitForTimeout(SETTLE_MS);
+        const box = await page.locator(".window").boundingBox();
+        if (box !== null) {
+          await page.mouse.move(box.x + 10, box.y + box.height / 2);
+          await page.mouse.move(box.x + box.width - 10, box.y + box.height / 3, { steps: 12 });
+          await page.locator(".window").screenshot({ path: join(OUTPUT, `${scene}-moving.png`) });
+        }
       }
       const sheetPage = await browser.newPage({ deviceScaleFactor: 1 });
       await contactSheet(sheetPage, scene, presets);
