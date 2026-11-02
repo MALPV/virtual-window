@@ -36,9 +36,11 @@ vec4 lens(vec2 offset, float radius, float alpha) {
   inside *= mix(0.92, 1.12, 1.0 - r * r);
   vec3 color = mix(inside, inside * 0.3, smoothstep(0.62, 1.0, r) * 0.85);
   vec2 shine = n - vec2(-0.3, 0.38);
-  color += vec3(exp(-dot(shine, shine) * 28.0)) * (0.3 + 0.7 * u_light);
-  float a = smoothstep(1.0, 0.8, r) * alpha;
-  return vec4(color * a, a);
+  float highlight = exp(-dot(shine, shine) * 28.0) * (0.45 + 0.55 * u_light);
+  // De noche el cuerpo de la gota casi no tapa el paisaje: es cristal oscuro, no una mancha opaca.
+  float body = smoothstep(1.0, 0.8, r) * alpha * (0.3 + 0.7 * u_light);
+  float a = max(body, highlight * alpha);
+  return vec4(color * body + vec3(highlight * alpha), a);
 }
 
 vec4 resting_drops(vec2 p, float scale, float seed, float max_radius) {
