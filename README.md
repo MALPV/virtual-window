@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/media/hero.jpg" alt="Five Virtual Window scenes side by side: mountains at noon, an alpine lake at golden hour, the open sea at sunset, a city at night and a coast under the full moon" width="100%">
+  <img src="docs/media/desktop.jpg" alt="A desktop with a code editor and, floating beside it, Virtual Window showing the open sea at sunset" width="100%">
 </p>
 
 <h1 align="center">Virtual Window</h1>
@@ -30,11 +30,18 @@ Virtual Window is not a video playing in a frame. Every scene is rendered in rea
 
 No accounts, no settings to fill in, no buttons on screen. Put it next to your editor or browser and forget it is software.
 
-<p align="center">
-  <img src="docs/media/parallax.gif" alt="Moving the cursor across the screen: distant peaks follow the viewer while the nearby trees stay, like looking through glass" width="280">
-  <br>
-  <sub>The cursor stands in for your head. Distant peaks follow you, nearby trees stay put.</sub>
-</p>
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/media/alive.gif" alt="The open sea at sunset with moving waves and sun glitter" width="240"></td>
+    <td align="center" width="33%"><img src="docs/media/rain.gif" alt="Raindrops beading and sliding down the glass over a grey sea" width="240"></td>
+    <td align="center" width="33%"><img src="docs/media/parallax.gif" alt="Moving the cursor across the screen: the cliffs and the far headland shift behind the frame like through real glass" width="240"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Alive</b><br><sub>Waves, light and clouds are rendered live, never looped.</sub></td>
+    <td align="center"><b>Real glass</b><br><sub>Raindrops bead, slide and refract the view behind them.</sub></td>
+    <td align="center"><b>Real depth</b><br><sub>The cursor stands in for your head: far things follow you, near things stay.</sub></td>
+  </tr>
+</table>
 
 ## Highlights
 
