@@ -172,7 +172,10 @@ async function main(): Promise<void> {
         ready: true,
       },
     });
-    if (new URLSearchParams(window.location.search).has("capture")) return;
+    if (new URLSearchParams(window.location.search).has("capture")) {
+      root.dataset.capture = "true";
+      return;
+    }
 
     const { mountSimulator } = await import("./devtools/simulator");
     mountSimulator({

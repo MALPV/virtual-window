@@ -79,6 +79,11 @@ body {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
+/* Las capturas automaticas no deben mostrar el tirador de redimensionar del modo navegador. */
+:root[data-capture="true"] .window {
+  resize: none;
+}
+
 /* Bordes con tonos distintos por lado para que las esquinas formen ingletes. */
 .casing {
   position: absolute;
