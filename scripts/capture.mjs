@@ -6,7 +6,7 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { chromium } from "playwright-core";
 import { createServer } from "vite";
@@ -29,7 +29,7 @@ const weather = (overrides) => ({
 
 const NO_MOON = { moonElevation: -20, moonTrack: 0.5, moonIllumination: 0.5, moonWaxing: true };
 
-const PRESETS = {
+export const PRESETS = {
   crescent: {
     sunElevation: -14,
     sunTrack: 0.72,
@@ -205,7 +205,10 @@ async function main() {
   if (errors.length > 0) console.log(`${errors.length} console errors/warnings, see .captures/errors.txt`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Solo se ejecuta al lanzarlo directamente: scripts/media.mjs importa los presets.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

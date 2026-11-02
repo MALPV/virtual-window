@@ -11,7 +11,8 @@
     "test": "vitest run",
     "check": "npm run typecheck && npm test",
     "tauri": "tauri",
-    "capture": "node scripts/capture.mjs"
+    "capture": "node scripts/capture.mjs",
+    "media": "node scripts/media.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2"
