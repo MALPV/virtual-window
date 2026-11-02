@@ -1,6 +1,6 @@
 # Privacy
 
-Window shows the real sky and weather where you are. This page explains exactly what leaves your computer to make that possible.
+Virtual Window shows the real sky and weather where you are. This page explains exactly what leaves your computer to make that possible.
 
 ## What is sent, and to whom
 

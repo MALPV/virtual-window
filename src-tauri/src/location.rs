@@ -197,7 +197,7 @@ mod tests {
 
     fn temp_cache_path(name: &str) -> PathBuf {
         std::env::temp_dir()
-            .join(format!("window-widget-test-{}-{name}", std::process::id()))
+            .join(format!("virtual-window-test-{}-{name}", std::process::id()))
             .join(CACHE_FILE_NAME)
     }
 

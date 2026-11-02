@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Window",
+  "productName": "Virtual Window",
   "version": "0.1.0",
-  "identifier": "dev.marcos.windowwidget",
+  "identifier": "dev.marcos.virtualwindow",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Window",
+        "title": "Virtual Window",
         "width": 300,
         "height": 400,
         "minWidth": 180,

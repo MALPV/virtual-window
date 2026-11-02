@@ -243,7 +243,7 @@ mod tests {
     fn temp_path(name: &str) -> PathBuf {
         std::env::temp_dir()
             .join(format!(
-                "window-widget-settings-{}-{name}",
+                "virtual-window-settings-{}-{name}",
                 std::process::id()
             ))
             .join(SETTINGS_FILE_NAME)

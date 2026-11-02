@@ -99,7 +99,7 @@ fn build_client() -> reqwest::Result<reqwest::Client> {
     reqwest::Client::builder()
         .https_only(true)
         .timeout(HTTP_TIMEOUT)
-        .user_agent(concat!("WindowWidget/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("VirtualWindow/", env!("CARGO_PKG_VERSION")))
         .build()
 }
 

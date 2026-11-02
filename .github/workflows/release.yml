@@ -54,7 +54,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: Window ${{ github.ref_name }}
+          releaseName: Virtual Window ${{ github.ref_name }}
           releaseBody: |
             Download the installer for your system from the assets below.
             These builds are not code-signed yet. See the README for how to open them on macOS and Windows.
